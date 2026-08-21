@@ -36,7 +36,7 @@ export default function Footer() {
             <li><Link to="/press">Media Centre</Link></li>
             <li><Link to="/terms">Terms of Use</Link></li>
             <li><Link to="/contact">Contact Us</Link></li>
-            <li><Link to="/comedians/1">Featured Comedians</Link></li>
+            <li><Link to="/browse">Featured Comedians</Link></li>
           </ul>
         </div>
 

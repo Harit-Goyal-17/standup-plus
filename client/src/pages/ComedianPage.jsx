@@ -18,7 +18,19 @@ export default function ComedianPage() {
       .catch(console.error);
   }, [id]);
 
-  if (!comedian) return <div style={{ padding: 40, textAlign: 'center' }}>Loading...</div>;
+  if (!comedian) return <div style={{ padding: 60, textAlign: 'center', color: '#888' }}>Loading comedian catalog...</div>;
+
+  if (comedian.error || !comedian.name) {
+    return (
+      <div style={{ padding: '80px 4%', textAlign: 'center' }}>
+        <h2 style={{ fontSize: '1.8rem', marginBottom: 12 }}>Comedian Not Found</h2>
+        <p style={{ color: '#9ca3af', marginBottom: 24 }}>The comedian profile you are looking for is unavailable or has been updated.</p>
+        <button className="btn-primary" onClick={() => navigate('/browse')}>
+          Browse All Comedians
+        </button>
+      </div>
+    );
+  }
 
   const videos = comedian.videos || [];
   const totalViews = videos.reduce((sum, v) => sum + v.view_count, 0) || 0;

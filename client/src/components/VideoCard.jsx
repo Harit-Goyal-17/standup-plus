@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { Play, Plus, Heart, ChevronDown, Check } from 'lucide-react';
 import { formatDuration, formatViews, getRatingColor, getDotSeparatedTopics, API_BASE } from '../utils';
 import { useAuth } from '../context/AuthContext';
@@ -8,10 +8,8 @@ export default function VideoCard({ video, onClick }) {
   const [added, setAdded] = useState(false);
   const [liked, setLiked] = useState(false);
   const [showLikeAnim, setShowLikeAnim] = useState(false);
-  const [isPlayingPreview, setIsPlayingPreview] = useState(false);
   const [alignment, setAlignment] = useState('center');
   const cardRef = useRef(null);
-  const hoverTimerRef = useRef(null);
 
   if (!video) return null;
 
@@ -22,7 +20,6 @@ export default function VideoCard({ video, onClick }) {
     : 0;
 
   const handleMouseEnter = () => {
-    // Detect viewport edge to avoid hover card clipping
     if (cardRef.current) {
       const rect = cardRef.current.getBoundingClientRect();
       if (rect.left < 160) {
@@ -33,25 +30,7 @@ export default function VideoCard({ video, onClick }) {
         setAlignment('center');
       }
     }
-
-    // Wait ~1.1s before launching video preview
-    hoverTimerRef.current = setTimeout(() => {
-      setIsPlayingPreview(true);
-    }, 1100);
   };
-
-  const handleMouseLeave = () => {
-    if (hoverTimerRef.current) {
-      clearTimeout(hoverTimerRef.current);
-    }
-    setIsPlayingPreview(false);
-  };
-
-  useEffect(() => {
-    return () => {
-      if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
-    };
-  }, []);
 
   const handleAdd = async (e) => {
     e.stopPropagation();
@@ -102,11 +81,6 @@ export default function VideoCard({ video, onClick }) {
     onClick(video);
   };
 
-  const preventClick = (e) => {
-    e.stopPropagation();
-    e.preventDefault();
-  };
-
   const TWO_WEEKS_MS = 14 * 24 * 60 * 60 * 1000;
   const isRecentlyAdded = Boolean(
     video.isRecentlyAdded || 
@@ -120,7 +94,6 @@ export default function VideoCard({ video, onClick }) {
       onClick={handleCardClick} 
       id={`video-${video.video_id}`}
       onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
     >
       <div className="video-thumb-container">
         <img src={video.thumbnail_url} alt={video.title} className="video-thumb" loading="lazy" />
@@ -145,16 +118,7 @@ export default function VideoCard({ video, onClick }) {
           {isRecentlyAdded && (
             <span className="recently-added-badge hover">Recently Added</span>
           )}
-          {isPlayingPreview ? (
-            <iframe
-              src={`https://www.youtube.com/embed/${video.video_id}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&playsinline=1&enablejsapi=1&start=${previewStart}`}
-              title={video.title}
-              className="video-hover-iframe"
-              allow="autoplay; encrypted-media"
-            />
-          ) : (
-            <img src={video.thumbnail_url} alt={video.title} className="video-hover-thumb" loading="lazy" />
-          )}
+          <img src={video.thumbnail_url} alt={video.title} className="video-hover-thumb" loading="lazy" />
 
           {progressPercent > 0 && (
             <div className="video-progress-bar-container">
