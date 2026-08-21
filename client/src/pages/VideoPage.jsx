@@ -175,7 +175,9 @@ export default function VideoPage() {
           start: startSeconds,
           modestbranding: 1,
           rel: 0,
-          playsinline: 1
+          playsinline: 1,
+          enablejsapi: 1,
+          origin: window.location.origin
         },
         events: {
           onReady: (event) => {
@@ -205,7 +207,7 @@ export default function VideoPage() {
       if (progressPollIntervalRef.current) clearInterval(progressPollIntervalRef.current);
       progressPollIntervalRef.current = setInterval(() => {
         reportCurrentProgress();
-      }, 3000);
+      }, 1000);
     }
 
     function stopProgressTracker() {
@@ -223,6 +225,11 @@ export default function VideoPage() {
         const currentTime = Math.floor(playerRef.current.getCurrentTime());
         const totalDuration = video?.duration_seconds || Math.floor(playerRef.current.getDuration() || 0);
         const isCompleted = completed || (totalDuration > 0 && currentTime / totalDuration >= 0.9);
+
+        // Near end of video -> Trigger autoplay countdown
+        if (totalDuration > 10 && currentTime >= totalDuration - 6 && !countdown) {
+          triggerAutoplayCountdown();
+        }
 
         if (currentTime > 0) {
           fetch(`${API_BASE}/user/watch-history`, {
@@ -248,13 +255,13 @@ export default function VideoPage() {
         reportCurrentProgress();
       }
     };
-  }, [videoId, startSeconds, user, token, authHeaders, video?.duration_seconds]);
+  }, [videoId, startSeconds, user, token, authHeaders, video?.duration_seconds, countdown]);
 
   // 4. Handle Autoplay Countdown
   const triggerAutoplayCountdown = () => {
     if (!autoplayEnabled) return;
     const targetNext = nextVideo || (comedianVideos.length > 0 ? comedianVideos[0] : moreLikeThis[0]);
-    if (!targetNext) return;
+    if (!targetNext || targetNext.video_id === videoId) return;
 
     setNextVideo(targetNext);
     setCountdown(5);
