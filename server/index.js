@@ -44,25 +44,33 @@ const transporter = nodemailer.createTransport({
 
 async function sendWelcomeEmail(toEmail, username) {
   if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    console.log(`[Mock Email] Welcome email to ${toEmail} suppressed because EMAIL credentials are not set.`);
+    console.log(`[Email Notice] Welcome email to ${toEmail} queued. Email credentials not configured.`);
     return;
   }
   try {
     await transporter.sendMail({
-      from: `"OpenMic" <${process.env.EMAIL_USER}>`,
+      from: `"StandUp+ India" <${process.env.EMAIL_USER}>`,
       to: toEmail,
-      subject: 'Welcome to OpenMic! 🎤',
+      subject: '🎉 Welcome to StandUp+! Your Stand-Up Comedy Universe',
       html: `
-        <div style="font-family: Arial, sans-serif; background-color: #0a0a0f; color: #fff; padding: 40px; text-align: center;">
-          <h1 style="color: #00f0ff;">Welcome to OpenMic, ${username}!</h1>
-          <p style="font-size: 18px; color: #d1d5db;">Get ready to laugh out loud. We've got the best comedy specials waiting for you.</p>
-          <a href="http://localhost:5173" style="display: inline-block; padding: 15px 30px; margin-top: 20px; background: linear-gradient(135deg, #00f0ff, #9333ea); color: white; text-decoration: none; border-radius: 30px; font-weight: bold;">Start Watching</a>
+        <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #0a0a0f; color: #ffffff; padding: 40px 20px; text-align: center;">
+          <div style="max-width: 540px; margin: 0 auto; background: #14141c; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 32px 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.8);">
+            <div style="font-size: 32px; font-weight: 900; color: #e50914; margin-bottom: 12px; font-family: sans-serif;">StandUp+</div>
+            <h1 style="color: #ffffff; font-size: 22px; margin-bottom: 12px;">Welcome to StandUp+, ${username}! 🎤</h1>
+            <p style="font-size: 15px; color: #a3a3a3; line-height: 1.6; margin-bottom: 24px;">
+              Get ready for non-stop laughter! You now have access to India's top stand-up specials from Zakir Khan, Samay Raina, Bassi, Abhishek Upmanyu, and many more.
+            </p>
+            <a href="https://standup-plus.onrender.com" style="display: inline-block; padding: 14px 28px; background: #e50914; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 700; font-size: 15px;">Start Watching Now</a>
+            <p style="font-size: 12px; color: #666666; margin-top: 30px;">
+              © 2026 StandUp+, Inc. All rights reserved.
+            </p>
+          </div>
         </div>
       `
     });
-    console.log(`Welcome email sent to ${toEmail}`);
+    console.log(`[Email Sent] Welcome email dispatched to ${toEmail}`);
   } catch (err) {
-    console.error('Error sending email:', err);
+    console.error('Error sending welcome email:', err);
   }
 }
 
@@ -472,10 +480,18 @@ app.get('/api/categories', asyncHandler(async (req, res) => {
 
 app.post('/api/auth/register', asyncHandler(async (req, res) => {
   const { username, email, password } = req.body;
-  if (!username || !email || !password) return res.status(400).json({ error: 'Missing fields' });
+  if (!username || !email || !password) return res.status(400).json({ error: 'Missing required fields' });
+
+  const cleanEmail = email.trim().toLowerCase();
+  const cleanUsername = username.trim();
+
+  // Strict Real Email Format Validation
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  if (!emailRegex.test(cleanEmail)) {
+    return res.status(400).json({ error: 'Please enter a valid, real email address (e.g. name@domain.com).' });
+  }
 
   // Validate Password Complexity
-  // 8 characters, 1 alphabet, 1 number, 1 special character
   const passRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/;
   if (!passRegex.test(password)) {
     return res.status(400).json({ 
@@ -483,33 +499,72 @@ app.post('/api/auth/register', asyncHandler(async (req, res) => {
     });
   }
 
-  const existing = dbGet('SELECT * FROM users WHERE username = ? OR email = ?', [username, email]);
-  if (existing) return res.status(400).json({ error: 'User already exists' });
+  const existing = dbGet('SELECT * FROM users WHERE LOWER(username) = ? OR LOWER(email) = ?', [cleanUsername.toLowerCase(), cleanEmail]);
+  if (existing) return res.status(400).json({ error: 'An account with this username or email already exists' });
 
   const hash = bcrypt.hashSync(password, 10);
   const userId = uuidv4();
+  
+  // 1. Create User
   dbRun(`
     INSERT INTO users (user_id, username, email, password_hash, created_at)
     VALUES (?, ?, ?, ?, ?)
-  `, [userId, username, email, hash, new Date().toISOString()]);
+  `, [userId, cleanUsername, cleanEmail, hash, new Date().toISOString()]);
+
+  // 2. Automatically create initial default profile with their chosen username
+  const profileId = userId + '-' + Date.now();
+  const defaultAvatar = '/images/comedians/samay_raina.jpg';
+  dbRun(`
+    INSERT INTO profiles (profile_id, user_id, name, avatar_url, is_locked)
+    VALUES (?, ?, ?, ?, 0)
+  `, [profileId, userId, cleanUsername, defaultAvatar]);
+
   saveDb();
 
-  // Send welcome email asynchronously
-  sendWelcomeEmail(email, username);
+  // 3. Send welcome email ONLY once on initial signup
+  sendWelcomeEmail(cleanEmail, cleanUsername);
 
-  const token = jwt.sign({ userId, username }, JWT_SECRET);
-  res.json({ token, user: { userId, username, email } });
+  const token = jwt.sign({ userId, username: cleanUsername }, JWT_SECRET);
+  const defaultProfile = { profile_id: profileId, user_id: userId, name: cleanUsername, avatar_url: defaultAvatar, is_locked: 0 };
+
+  res.json({ 
+    token, 
+    user: { userId, username: cleanUsername, email: cleanEmail }, 
+    profile: defaultProfile,
+    profiles: [defaultProfile]
+  });
 }));
 
 app.post('/api/auth/login', asyncHandler(async (req, res) => {
   const { email, password } = req.body;
-  const user = dbGet('SELECT * FROM users WHERE email = ?', [email]);
+  if (!email || !password) return res.status(400).json({ error: 'Email and password are required' });
+
+  const cleanEmail = email.trim().toLowerCase();
+  const user = dbGet('SELECT * FROM users WHERE LOWER(email) = ?', [cleanEmail]);
   if (!user || !bcrypt.compareSync(password, user.password_hash)) {
-    return res.status(401).json({ error: 'Invalid credentials' });
+    return res.status(401).json({ error: 'Invalid email or password' });
+  }
+
+  // Ensure user has at least one profile
+  let userProfiles = dbAll('SELECT profile_id, user_id, name, avatar_url, is_locked FROM profiles WHERE user_id = ?', [user.user_id]);
+  if (userProfiles.length === 0) {
+    const profileId = user.user_id + '-' + Date.now();
+    const defaultAvatar = user.avatar_url || '/images/comedians/samay_raina.jpg';
+    dbRun(`
+      INSERT INTO profiles (profile_id, user_id, name, avatar_url, is_locked)
+      VALUES (?, ?, ?, ?, 0)
+    `, [profileId, user.user_id, user.username, defaultAvatar]);
+    saveDb();
+    userProfiles = [{ profile_id: profileId, user_id: user.user_id, name: user.username, avatar_url: defaultAvatar, is_locked: 0 }];
   }
 
   const token = jwt.sign({ userId: user.user_id, username: user.username }, JWT_SECRET);
-  res.json({ token, user: { userId: user.user_id, username: user.username, email: user.email } });
+  res.json({ 
+    token, 
+    user: { userId: user.user_id, username: user.username, email: user.email },
+    profile: userProfiles[0],
+    profiles: userProfiles
+  });
 }));
 
 app.post('/api/auth/google', asyncHandler(async (req, res) => {
@@ -522,29 +577,56 @@ app.post('/api/auth/google', asyncHandler(async (req, res) => {
       audience: GOOGLE_CLIENT_ID
     });
     const payload = ticket.getPayload();
-    const email = payload.email;
-    const name = payload.name;
+    const cleanEmail = payload.email.trim().toLowerCase();
+    const cleanName = (payload.name || payload.email.split('@')[0]).trim();
     const picture = payload.picture;
 
-    let user = dbGet('SELECT * FROM users WHERE email = ?', [email]);
+    let user = dbGet('SELECT * FROM users WHERE LOWER(email) = ?', [cleanEmail]);
+    let isNewUser = false;
     
     if (!user) {
-      // Create new user for Google login
+      isNewUser = true;
       const userId = uuidv4();
-      const randomPasswordHash = bcrypt.hashSync(uuidv4(), 10); // Random password for OAuth users
+      const randomPasswordHash = bcrypt.hashSync(uuidv4(), 10);
       dbRun(`
         INSERT INTO users (user_id, username, email, password_hash, avatar_url, created_at)
         VALUES (?, ?, ?, ?, ?, ?)
-      `, [userId, name, email, randomPasswordHash, picture, new Date().toISOString()]);
+      `, [userId, cleanName, cleanEmail, randomPasswordHash, picture, new Date().toISOString()]);
+      
+      const profileId = userId + '-' + Date.now();
+      const userAvatar = picture || '/images/comedians/samay_raina.jpg';
+      dbRun(`
+        INSERT INTO profiles (profile_id, user_id, name, avatar_url, is_locked)
+        VALUES (?, ?, ?, ?, 0)
+      `, [profileId, userId, cleanName, userAvatar]);
+
       saveDb();
       
-      sendWelcomeEmail(email, name);
+      // Welcome email ONLY on initial Google registration
+      sendWelcomeEmail(cleanEmail, cleanName);
       
-      user = { user_id: userId, username: name, email: email, avatar_url: picture };
+      user = { user_id: userId, username: cleanName, email: cleanEmail, avatar_url: picture };
+    }
+
+    let userProfiles = dbAll('SELECT profile_id, user_id, name, avatar_url, is_locked FROM profiles WHERE user_id = ?', [user.user_id]);
+    if (userProfiles.length === 0) {
+      const profileId = user.user_id + '-' + Date.now();
+      const userAvatar = user.avatar_url || '/images/comedians/samay_raina.jpg';
+      dbRun(`
+        INSERT INTO profiles (profile_id, user_id, name, avatar_url, is_locked)
+        VALUES (?, ?, ?, ?, 0)
+      `, [profileId, user.user_id, user.username, userAvatar]);
+      saveDb();
+      userProfiles = [{ profile_id: profileId, user_id: user.user_id, name: user.username, avatar_url: userAvatar, is_locked: 0 }];
     }
 
     const token = jwt.sign({ userId: user.user_id, username: user.username }, JWT_SECRET);
-    res.json({ token, user: { userId: user.user_id, username: user.username, email: user.email, avatar_url: user.avatar_url } });
+    res.json({ 
+      token, 
+      user: { userId: user.user_id, username: user.username, email: user.email, avatar_url: user.avatar_url },
+      profile: userProfiles[0],
+      profiles: userProfiles
+    });
   } catch (err) {
     console.error('Google Auth Error:', err);
     res.status(401).json({ error: `Google Auth Failed: ${err.message}` });

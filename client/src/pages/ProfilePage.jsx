@@ -14,7 +14,9 @@ export default function ProfilePage() {
   const [avatarCategory, setAvatarCategory] = useState('comedians'); // 'comedians' | 'classics'
   const [isLocked, setIsLocked] = useState(Boolean(activeProfile?.is_locked));
   const [pin, setPin] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [saveError, setSaveError] = useState('');
   const [watchCount, setWatchCount] = useState(0);
 
   useEffect(() => {
@@ -48,38 +50,77 @@ export default function ProfilePage() {
   }, [token, activeProfile?.profile_id]);
 
   const handleSaveProfile = async (e) => {
-    e.preventDefault();
-    if (!activeProfile || !profileName.trim()) return;
-
-    if (isLocked && pin && pin.length !== 4) {
-      alert('Please enter a 4-digit numeric PIN for Profile Lock');
+    if (e) e.preventDefault();
+    if (!profileName.trim()) {
+      setSaveError('Please enter a profile name');
       return;
     }
 
-    try {
-      const res = await fetch(`${API_BASE}/profiles/${activeProfile.profile_id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          name: profileName,
-          avatar_url: avatarUrl,
-          is_locked: isLocked,
-          pin: isLocked ? pin : null
-        })
-      });
+    if (isLocked && pin && pin.length !== 4) {
+      setSaveError('Please enter a 4-digit numeric PIN for Profile Lock');
+      return;
+    }
 
-      if (res.ok) {
-        const updated = await res.json();
-        selectProfile(updated);
-        setProfiles(profiles.map(p => p.profile_id === updated.profile_id ? updated : p));
-        setSaveSuccess(true);
-        setTimeout(() => setSaveSuccess(false), 3000);
+    setIsSaving(true);
+    setSaveError('');
+
+    try {
+      if (activeProfile) {
+        const res = await fetch(`${API_BASE}/profiles/${activeProfile.profile_id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            name: profileName.trim(),
+            avatar_url: avatarUrl,
+            is_locked: isLocked,
+            pin: isLocked ? pin : null
+          })
+        });
+
+        if (res.ok) {
+          const updated = await res.json();
+          selectProfile(updated);
+          setProfiles(profiles.map(p => p.profile_id === updated.profile_id ? updated : p));
+          setSaveSuccess(true);
+          setTimeout(() => setSaveSuccess(false), 3000);
+        } else {
+          const errData = await res.json();
+          setSaveError(errData.error || 'Failed to update profile');
+        }
+      } else {
+        const res = await fetch(`${API_BASE}/profiles`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            name: profileName.trim(),
+            avatar_url: avatarUrl,
+            is_locked: isLocked,
+            pin: isLocked ? pin : null
+          })
+        });
+
+        if (res.ok) {
+          const created = await res.json();
+          selectProfile(created);
+          setProfiles([...profiles, created]);
+          setSaveSuccess(true);
+          setTimeout(() => setSaveSuccess(false), 3000);
+        } else {
+          const errData = await res.json();
+          setSaveError(errData.error || 'Failed to create profile');
+        }
       }
     } catch(err) {
-      console.error('Error updating profile:', err);
+      console.error('Error saving profile:', err);
+      setSaveError('Network error while saving profile');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -246,8 +287,19 @@ export default function ProfilePage() {
               </div>
             )}
 
-            <button type="submit" className="btn-primary profile-save-btn" style={{ marginTop: 28 }}>
-              <Save size={18} /> Save Changes
+            {saveError && (
+              <div className="profile-save-toast" style={{ color: '#ef4444', background: 'rgba(239, 68, 68, 0.12)', borderColor: 'rgba(239, 68, 68, 0.3)' }}>
+                <AlertCircle size={18} color="#ef4444" /> {saveError}
+              </div>
+            )}
+
+            <button 
+              type="submit" 
+              className="btn-primary profile-save-btn" 
+              style={{ marginTop: 28 }}
+              disabled={isSaving}
+            >
+              <Save size={18} /> {isSaving ? 'Saving Changes...' : 'Save Changes'}
             </button>
           </form>
         </div>

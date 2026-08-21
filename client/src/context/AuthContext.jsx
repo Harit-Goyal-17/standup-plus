@@ -23,23 +23,38 @@ export const AuthProvider = ({ children }) => {
           // Fetch profiles
           return fetch(`${API_BASE}/profiles`, {
             headers: { 'Authorization': `Bearer ${token}` }
-          }).then(res => res.json()).then(profs => {
-            setProfiles(profs);
+          })
+          .then(res => res.json())
+          .then(profs => {
+            const profileList = Array.isArray(profs) ? profs : [];
+            setProfiles(profileList);
+            
+            // Restore active profile across refreshes
             const savedProfileId = localStorage.getItem('activeProfileId');
-            if (savedProfileId) {
-              const prof = profs.find(p => p.profile_id === savedProfileId);
-              if (prof) setActiveProfile(prof);
+            let matched = profileList.find(p => String(p.profile_id) === String(savedProfileId));
+            if (!matched && profileList.length > 0) {
+              matched = profileList[0];
+            }
+            if (matched) {
+              setActiveProfile(matched);
+              localStorage.setItem('activeProfileId', matched.profile_id);
             }
           });
         }
         else {
           setToken(null);
+          setUser(null);
+          setActiveProfile(null);
           localStorage.removeItem('token');
+          localStorage.removeItem('activeProfileId');
         }
       })
       .catch(() => {
         setToken(null);
+        setUser(null);
+        setActiveProfile(null);
         localStorage.removeItem('token');
+        localStorage.removeItem('activeProfileId');
       })
       .finally(() => setLoading(false));
     } else {
@@ -59,6 +74,15 @@ export const AuthProvider = ({ children }) => {
         setToken(data.token);
         setUser(data.user);
         localStorage.setItem('token', data.token);
+        
+        if (data.profiles && Array.isArray(data.profiles)) {
+          setProfiles(data.profiles);
+        }
+        if (data.profile) {
+          setActiveProfile(data.profile);
+          localStorage.setItem('activeProfileId', data.profile.profile_id);
+        }
+        
         setAuthModalOpen(false);
         return { success: true };
       }
@@ -80,6 +104,15 @@ export const AuthProvider = ({ children }) => {
         setToken(data.token);
         setUser(data.user);
         localStorage.setItem('token', data.token);
+        
+        if (data.profiles && Array.isArray(data.profiles)) {
+          setProfiles(data.profiles);
+        }
+        if (data.profile) {
+          setActiveProfile(data.profile);
+          localStorage.setItem('activeProfileId', data.profile.profile_id);
+        }
+        
         setAuthModalOpen(false);
         return { success: true };
       }
@@ -101,6 +134,15 @@ export const AuthProvider = ({ children }) => {
         setToken(data.token);
         setUser(data.user);
         localStorage.setItem('token', data.token);
+        
+        if (data.profiles && Array.isArray(data.profiles)) {
+          setProfiles(data.profiles);
+        }
+        if (data.profile) {
+          setActiveProfile(data.profile);
+          localStorage.setItem('activeProfileId', data.profile.profile_id);
+        }
+        
         setAuthModalOpen(false);
         return { success: true };
       }
