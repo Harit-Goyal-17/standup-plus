@@ -568,9 +568,9 @@ app.post('/api/auth/register', asyncHandler(async (req, res) => {
     VALUES (?, ?, ?, ?, ?)
   `, [userId, cleanUsername, cleanEmail, hash, new Date().toISOString()]);
 
-  // 2. Automatically create initial default profile with their chosen username
+  // 2. Automatically create initial default profile with their chosen username and Classic Avatar
   const profileId = userId + '-' + Date.now();
-  const defaultAvatar = '/images/comedians/samay_raina.jpg';
+  const defaultAvatar = 'https://api.dicebear.com/7.x/bottts/svg?seed=red-bot&backgroundColor=e50914';
   dbRun(`
     INSERT INTO profiles (profile_id, user_id, name, avatar_url, is_locked)
     VALUES (?, ?, ?, ?, 0)
@@ -606,7 +606,7 @@ app.post('/api/auth/login', asyncHandler(async (req, res) => {
   let userProfiles = dbAll('SELECT profile_id, user_id, name, avatar_url, is_locked FROM profiles WHERE user_id = ?', [user.user_id]);
   if (userProfiles.length === 0) {
     const profileId = user.user_id + '-' + Date.now();
-    const defaultAvatar = user.avatar_url || '/images/comedians/samay_raina.jpg';
+    const defaultAvatar = user.avatar_url || 'https://api.dicebear.com/7.x/bottts/svg?seed=red-bot&backgroundColor=e50914';
     dbRun(`
       INSERT INTO profiles (profile_id, user_id, name, avatar_url, is_locked)
       VALUES (?, ?, ?, ?, 0)
@@ -651,7 +651,7 @@ app.post('/api/auth/google', asyncHandler(async (req, res) => {
       `, [userId, cleanName, cleanEmail, randomPasswordHash, picture, new Date().toISOString()]);
       
       const profileId = userId + '-' + Date.now();
-      const userAvatar = picture || '/images/comedians/samay_raina.jpg';
+      const userAvatar = picture || 'https://api.dicebear.com/7.x/bottts/svg?seed=red-bot&backgroundColor=e50914';
       dbRun(`
         INSERT INTO profiles (profile_id, user_id, name, avatar_url, is_locked)
         VALUES (?, ?, ?, ?, 0)
@@ -668,7 +668,7 @@ app.post('/api/auth/google', asyncHandler(async (req, res) => {
     let userProfiles = dbAll('SELECT profile_id, user_id, name, avatar_url, is_locked FROM profiles WHERE user_id = ?', [user.user_id]);
     if (userProfiles.length === 0) {
       const profileId = user.user_id + '-' + Date.now();
-      const userAvatar = user.avatar_url || '/images/comedians/samay_raina.jpg';
+      const userAvatar = user.avatar_url || 'https://api.dicebear.com/7.x/bottts/svg?seed=red-bot&backgroundColor=e50914';
       dbRun(`
         INSERT INTO profiles (profile_id, user_id, name, avatar_url, is_locked)
         VALUES (?, ?, ?, ?, 0)

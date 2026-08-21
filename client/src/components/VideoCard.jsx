@@ -107,8 +107,11 @@ export default function VideoCard({ video, onClick }) {
     e.preventDefault();
   };
 
-  // Determine starting timestamp for preview and playback
-  const previewStart = Math.floor(video.watch_duration_seconds || 0);
+  const TWO_WEEKS_MS = 14 * 24 * 60 * 60 * 1000;
+  const isRecentlyAdded = Boolean(
+    video.isRecentlyAdded || 
+    (video.published_at && (Date.now() - new Date(video.published_at).getTime()) <= TWO_WEEKS_MS && (Date.now() - new Date(video.published_at).getTime()) >= 0)
+  );
 
   return (
     <div 
@@ -123,8 +126,8 @@ export default function VideoCard({ video, onClick }) {
         <img src={video.thumbnail_url} alt={video.title} className="video-thumb" loading="lazy" />
         <span className="duration-badge">{formatDuration(video.duration_seconds)}</span>
         
-        {/* Recently Added Badge */}
-        {(video.isRecentlyAdded || (video.published_at && new Date(video.published_at) > new Date('2024-01-01'))) && (
+        {/* Strictly Recently Added (<= 2 Weeks) */}
+        {isRecentlyAdded && (
           <span className="recently-added-badge">Recently Added</span>
         )}
 
@@ -139,7 +142,7 @@ export default function VideoCard({ video, onClick }) {
       {/* Netflix-style hover expansion card */}
       <div className={`video-hover-card align-${alignment}`}>
         <div className="video-hover-media-wrapper">
-          {(video.isRecentlyAdded || (video.published_at && new Date(video.published_at) > new Date('2024-01-01'))) && (
+          {isRecentlyAdded && (
             <span className="recently-added-badge hover">Recently Added</span>
           )}
           {isPlayingPreview ? (

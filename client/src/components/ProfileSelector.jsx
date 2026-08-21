@@ -11,8 +11,8 @@ export default function ProfileSelector() {
   
   // Form State
   const [name, setName] = useState('');
-  const [selectedAvatar, setSelectedAvatar] = useState(COMEDIAN_AVATARS[0].url);
-  const [avatarCategory, setAvatarCategory] = useState('comedians');
+  const [selectedAvatar, setSelectedAvatar] = useState(CLASSIC_AVATARS[0].url);
+  const [avatarCategory, setAvatarCategory] = useState('classics');
   const [isLocked, setIsLocked] = useState(false);
   const [pin, setPin] = useState('');
   
@@ -279,7 +279,7 @@ export default function ProfileSelector() {
               onClick={() => {
                 setIsAdding(true);
                 setName('');
-                setSelectedAvatar(COMEDIAN_AVATARS[profiles.length % COMEDIAN_AVATARS.length].url);
+                setSelectedAvatar(CLASSIC_AVATARS[profiles.length % CLASSIC_AVATARS.length].url);
                 setIsLocked(false);
                 setPin('');
               }}

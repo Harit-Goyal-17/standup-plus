@@ -8,10 +8,10 @@ export default function ProfilePage() {
   const { user, token, activeProfile, selectProfile, profiles, setProfiles, logout, loading } = useAuth();
   const navigate = useNavigate();
   
-  const [activeTab, setActiveTab] = useState('edit'); // 'edit' | 'profiles' | 'plan' | 'activity'
+  const [activeTab, setActiveTab] = useState('edit'); // 'edit' | 'security' | 'profiles' | 'plan' | 'activity'
   const [profileName, setProfileName] = useState(activeProfile?.name || '');
-  const [avatarUrl, setAvatarUrl] = useState(activeProfile?.avatar_url || COMEDIAN_AVATARS[0].url);
-  const [avatarCategory, setAvatarCategory] = useState('comedians'); // 'comedians' | 'classics'
+  const [avatarUrl, setAvatarUrl] = useState(activeProfile?.avatar_url || CLASSIC_AVATARS[0].url);
+  const [avatarCategory, setAvatarCategory] = useState('classics'); // 'classics' | 'comedians'
   const [isLocked, setIsLocked] = useState(Boolean(activeProfile?.is_locked));
   const [pin, setPin] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -28,7 +28,7 @@ export default function ProfilePage() {
   useEffect(() => {
     if (activeProfile) {
       setProfileName(activeProfile.name || '');
-      setAvatarUrl(activeProfile.avatar_url || COMEDIAN_AVATARS[0].url);
+      setAvatarUrl(activeProfile.avatar_url || CLASSIC_AVATARS[0].url);
       setIsLocked(Boolean(activeProfile.is_locked));
     }
   }, [activeProfile]);
