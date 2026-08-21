@@ -540,6 +540,14 @@ input, select { font-family: inherit; }
   display: block;
 }
 
+.video-hover-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+  pointer-events: none;
+}
+
 .video-hover-body { padding: 12px 14px 14px; }
 .video-hover-actions {
   display: flex; justify-content: space-between;

@@ -25,17 +25,17 @@ export default function HeroSection({ videos }) {
     }
   }, [heroVideos.length]);
 
-  // Handle auto-play trailer when user stays on hero without scrolling
+  // Handle auto-play trailer when user stays on hero without scrolling (> 2s)
   useEffect(() => {
     setIsPlayingTrailer(false);
     if (trailerTimerRef.current) clearTimeout(trailerTimerRef.current);
 
-    // After 2.5 seconds on the current slide, start video preview
+    // After 2.0 seconds on the current slide, start video preview
     trailerTimerRef.current = setTimeout(() => {
       if (window.scrollY < 200) {
         setIsPlayingTrailer(true);
       }
-    }, 2500);
+    }, 2000);
 
     return () => {
       if (trailerTimerRef.current) clearTimeout(trailerTimerRef.current);
@@ -53,14 +53,14 @@ export default function HeroSection({ videos }) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Slide rotation every 14s (longer to allow trailer viewing)
+  // Slide rotation every 14s (paused while video trailer is actively playing)
   useEffect(() => {
-    if (heroVideos.length <= 1) return;
+    if (heroVideos.length <= 1 || isPlayingTrailer) return;
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % heroVideos.length);
     }, 14000);
     return () => clearInterval(interval);
-  }, [heroVideos.length]);
+  }, [heroVideos.length, isPlayingTrailer]);
 
   if (!heroVideos || heroVideos.length === 0) {
     return (
@@ -143,7 +143,7 @@ export default function HeroSection({ videos }) {
           {isPlayingTrailer ? (
             <div className="hero-video-trailer-wrap">
               <iframe
-                src={`https://www.youtube-nocookie.com/embed/${current.video_id}?autoplay=1&mute=${isMuted ? '1' : '0'}&controls=0&showinfo=0&rel=0&loop=1&playlist=${current.video_id}&enablejsapi=1`}
+                src={`https://www.youtube.com/embed/${current.video_id}?autoplay=1&mute=${isMuted ? '1' : '0'}&controls=0&modestbranding=1&rel=0&loop=1&playlist=${current.video_id}&enablejsapi=1`}
                 title={current.title}
                 className="hero-video-trailer-iframe"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"

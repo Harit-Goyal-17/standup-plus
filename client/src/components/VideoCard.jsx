@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Play, Plus, Heart, ChevronDown, Check } from 'lucide-react';
 import { formatDuration, formatViews, getRatingColor, getDotSeparatedTopics, API_BASE } from '../utils';
 import { useAuth } from '../context/AuthContext';
@@ -8,8 +8,10 @@ export default function VideoCard({ video, onClick }) {
   const [added, setAdded] = useState(false);
   const [liked, setLiked] = useState(false);
   const [showLikeAnim, setShowLikeAnim] = useState(false);
+  const [isPlayingPreview, setIsPlayingPreview] = useState(false);
   const [alignment, setAlignment] = useState('center');
   const cardRef = useRef(null);
+  const hoverTimerRef = useRef(null);
 
   if (!video) return null;
 
@@ -30,7 +32,26 @@ export default function VideoCard({ video, onClick }) {
         setAlignment('center');
       }
     }
+
+    if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+    // Start playing video preview after user hovers for 2 seconds
+    hoverTimerRef.current = setTimeout(() => {
+      setIsPlayingPreview(true);
+    }, 2000);
   };
+
+  const handleMouseLeave = () => {
+    if (hoverTimerRef.current) {
+      clearTimeout(hoverTimerRef.current);
+    }
+    setIsPlayingPreview(false);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+    };
+  }, []);
 
   const handleAdd = async (e) => {
     e.stopPropagation();
@@ -94,6 +115,7 @@ export default function VideoCard({ video, onClick }) {
       onClick={handleCardClick} 
       id={`video-${video.video_id}`}
       onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       <div className="video-thumb-container">
         <img src={video.thumbnail_url} alt={video.title} className="video-thumb" loading="lazy" />
@@ -118,7 +140,16 @@ export default function VideoCard({ video, onClick }) {
           {isRecentlyAdded && (
             <span className="recently-added-badge hover">Recently Added</span>
           )}
-          <img src={video.thumbnail_url} alt={video.title} className="video-hover-thumb" loading="lazy" />
+          {isPlayingPreview ? (
+            <iframe
+              src={`https://www.youtube.com/embed/${video.video_id}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&playsinline=1`}
+              title={video.title}
+              className="video-hover-iframe"
+              allow="autoplay; encrypted-media"
+            />
+          ) : (
+            <img src={video.thumbnail_url} alt={video.title} className="video-hover-thumb" loading="lazy" />
+          )}
 
           {progressPercent > 0 && (
             <div className="video-progress-bar-container">
