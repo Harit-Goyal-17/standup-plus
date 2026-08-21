@@ -334,7 +334,7 @@ app.get('/api/categories', asyncHandler(async (req, res) => {
     ORDER BY v.published_at DESC
     LIMIT 10
   `);
-  if (newVideos.length > 0) categories.push({ title: '✨ Recently Added', videos: newVideos, isRecentlyAdded: true });
+  if (newVideos.length > 0) categories.push({ title: 'Recently Added', videos: newVideos, isRecentlyAdded: true });
 
   const darkVideos = getCategoryVideos(`
     SELECT DISTINCT v.*, c.name as comedian_name 
@@ -428,7 +428,7 @@ app.get('/api/categories', asyncHandler(async (req, res) => {
     ORDER BY v.view_count DESC
     LIMIT 10
   `);
-  if (topEpisodes.length > 0) categories.push({ title: '📺 Comedy Series', videos: topEpisodes, isTop10: true });
+  if (topEpisodes.length > 0) categories.push({ title: 'Comedy Series', videos: topEpisodes, isTop10: true });
 
   // Top 10 Comedy Specials — full specials ranked by views
   const topSpecials = getCategoryVideos(`
@@ -439,19 +439,19 @@ app.get('/api/categories', asyncHandler(async (req, res) => {
     ORDER BY v.view_count DESC
     LIMIT 10
   `);
-  if (topSpecials.length > 0) categories.push({ title: topSpecials.length >= 10 ? '🎬 Top 10 Comedy Specials' : '🎬 Top Comedy Specials', videos: topSpecials, isTop10: true });
+  if (topSpecials.length > 0) categories.push({ title: topSpecials.length >= 10 ? 'Top 10 Specials Today' : 'Top Comedy Specials', videos: topSpecials, isTop10: true });
 
-  // Top 10 Standup Bits — shorter popular standup sets (5-40 min)
+  // Top 10 Standup Bits — shorter popular standup sets (3-40 min)
   const topBits = getCategoryVideos(`
     SELECT v.*, c.name as comedian_name
     FROM videos v
     JOIN comedians c ON v.comedian_id = c.comedian_id
-    WHERE v.content_type = 'standup_set'
-      AND v.duration_seconds BETWEEN 300 AND 2400
+    WHERE (v.content_type IN ('standup_set', 'standup_bit') OR v.content_type IS NULL)
+      AND v.duration_seconds BETWEEN 180 AND 2400
     ORDER BY v.view_count DESC
     LIMIT 10
   `);
-  if (topBits.length > 0) categories.push({ title: '🔥 Top 10 Standup Bits', videos: topBits, isTop10: true });
+  if (topBits.length > 0) categories.push({ title: 'Top 10 Standup Bits Today', videos: topBits, isTop10: true });
 
   // Top 10 Roasts
   const topRoasts = getCategoryVideos(`
@@ -463,7 +463,7 @@ app.get('/api/categories', asyncHandler(async (req, res) => {
     ORDER BY v.view_count DESC
     LIMIT 10
   `);
-  if (topRoasts.length > 0) categories.push({ title: topRoasts.length >= 10 ? '🔥 Top 10 Roasts' : '🔥 Top Roasts', videos: topRoasts, isTop10: true });
+  if (topRoasts.length > 0) categories.push({ title: topRoasts.length >= 10 ? 'Top 10 Roasts' : 'Top Roasts', videos: topRoasts, isTop10: true });
 
   // Top 10 Crowd Work
   const topCrowdWork = getCategoryVideos(`
@@ -471,12 +471,10 @@ app.get('/api/categories', asyncHandler(async (req, res) => {
     FROM videos v
     JOIN comedians c ON v.comedian_id = c.comedian_id
     WHERE v.content_type = 'crowd_work'
-       OR LOWER(v.title) LIKE '%crowd work%'
-       OR LOWER(v.title) LIKE '%crowdwork%'
+       OR LOWER(v.title) LIKE '%crowd%'
     ORDER BY v.view_count DESC
     LIMIT 10
-  `);
-  if (topCrowdWork.length > 0) categories.push({ title: topCrowdWork.length >= 10 ? '🎤 Top 10 Crowd Work' : '🎤 Top Crowd Work', videos: topCrowdWork, isTop10: true });
+  if (topCrowdWork.length > 0) categories.push({ title: topCrowdWork.length >= 10 ? 'Top 10 Crowd Work' : 'Top Crowd Work', videos: topCrowdWork, isTop10: true });
 
   res.json(categories);
 }));

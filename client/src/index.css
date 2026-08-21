@@ -1688,23 +1688,25 @@ input, select { font-family: inherit; }
   align-items: flex-end;
   flex: 0 0 calc(20% - 6.4px);
   position: relative;
-  padding-left: 50px;
+  padding-left: 68px;
 }
 
 .top10-number {
   position: absolute;
-  left: 0;
-  bottom: 5px;
-  font-family: var(--font-display);
-  font-size: 7rem;
+  left: -6px;
+  bottom: -4px;
+  font-family: 'Impact', 'Outfit', var(--font-display), sans-serif;
+  font-size: 8.8rem;
   font-weight: 900;
-  line-height: 0.8;
-  color: transparent;
-  -webkit-text-stroke: 2.5px rgba(255, 255, 255, 0.7);
-  text-shadow: 0 0 30px rgba(229, 9, 20, 0.3);
+  line-height: 0.75;
+  color: #0b0b0f;
+  -webkit-text-stroke: 4px #595959;
+  text-shadow: 4px 4px 0px rgba(0, 0, 0, 0.9), 0 0 30px rgba(0, 0, 0, 0.9);
   z-index: 1;
   user-select: none;
   pointer-events: none;
+  letter-spacing: -6px;
+  filter: drop-shadow(2px 4px 8px rgba(0, 0, 0, 0.9));
 }
 
 .top10-item .video-card {
@@ -1716,10 +1718,13 @@ input, select { font-family: inherit; }
 
 @media (max-width: 768px) {
   .top10-number {
-    font-size: 4.5rem;
+    font-size: 5rem;
+    left: -2px;
+    letter-spacing: -4px;
+    -webkit-text-stroke: 2.5px #595959;
   }
   .top10-item {
-    padding-left: 35px;
+    padding-left: 42px;
   }
 }
 

@@ -87,42 +87,26 @@ export default function HomePage() {
       <HeroSection videos={featured} />
       
       <div className="home-rows-container">
-        {/* Row 1: Bingeworthy Comedy Series */}
-        {(categories[0]?.videos?.length > 0 || featured.length > 0) && (
-          <VideoCarousel title="Bingeworthy Comedy Series" videos={categories[0]?.videos || featured} onVideoClick={handleVideoClick} />
-        )}
-
-        {/* Row 2: We Think You'll Love These (Recommendations) */}
+        {/* Row 1: Recommendations (if logged in) */}
         {user && recommendations.length > 0 && (
           <VideoCarousel title="We Think You'll Love These" videos={recommendations} onVideoClick={handleVideoClick} />
         )}
         
-        {/* Row 3: Continue Watching for active profile */}
+        {/* Row 2: Continue Watching for active profile */}
         {user && watchHistory.length > 0 && (
           <VideoCarousel title={`Continue Watching for ${profileDisplayName}`} videos={watchHistory} onVideoClick={handleVideoClick} />
         )}
 
-        {/* Row 4: Another row (e.g. favorite comedian or second category) */}
-        {user && favoriteComedianData && favoriteComedianData.videos && favoriteComedianData.videos.length > 0 ? (
+        {/* Row 3: Favorite Comedian (if applicable) */}
+        {user && favoriteComedianData?.videos?.length > 0 && (
           <VideoCarousel 
             title={`Because you like ${favoriteComedianData.comedian.name}`} 
             videos={favoriteComedianData.videos} 
             onVideoClick={handleVideoClick} 
           />
-        ) : categories[1]?.videos?.length > 0 && (
-          <VideoCarousel title={categories[1].title} videos={categories[1].videos} onVideoClick={handleVideoClick} />
         )}
 
-        {/* Row 5: Top 10 Specials */}
-        {featured.length > 0 && (
-          <VideoCarousel title="Top 10 Specials Today" videos={featured.slice(0,10)} onVideoClick={handleVideoClick} isTop10={true} />
-        )}
-
-        {/* Row 6: Top 10 Bits (Using another category if available) */}
-        {categories.length > 2 && categories[2]?.videos?.length > 0 && (
-          <VideoCarousel title="Top 10 Bits Today" videos={categories[2].videos.slice(0,10)} onVideoClick={handleVideoClick} isTop10={true} />
-        )}
-        
+        {/* Category Rows (Trending Now, Top 10 Specials, Top 10 Bits, Comedy Series, Recently Added, etc.) */}
         {loading ? (
           <div style={{ padding: '20px 4%' }}>
             <div className="skeleton" style={{ height: 30, width: 200, marginBottom: 20 }}></div>
@@ -131,9 +115,16 @@ export default function HomePage() {
             </div>
           </div>
         ) : (
-          categories.slice(3).map(cat => (
-            cat.videos?.length > 0 && 
-            <VideoCarousel key={cat.title} title={cat.title} videos={cat.videos} onVideoClick={handleVideoClick} isTop10={cat.isTop10} />
+          categories.map(cat => (
+            cat.videos?.length > 0 && (
+              <VideoCarousel 
+                key={cat.title} 
+                title={cat.title} 
+                videos={cat.videos} 
+                onVideoClick={handleVideoClick} 
+                isTop10={cat.isTop10} 
+              />
+            )
           ))
         )}
       </div>
