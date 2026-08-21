@@ -200,110 +200,155 @@ input, select { font-family: inherit; }
   color: #ffffff;
 }
 
-/* Expanded Browse Comedians Dropdown Modal */
+/* Expanded Browse Comedians Dropdown Modal (Symmetrical 2-Column with ZERO horizontal scrolling) */
 .nav-dropdown-container {
   position: relative;
 }
+
 .nav-comedians-expanded-modal {
   position: absolute;
-  top: calc(100% + 14px);
+  top: calc(100% + 12px);
   left: 50%;
   transform: translateX(-50%);
-  width: 540px;
+  width: 440px;
+  max-width: calc(100vw - 32px);
   background: rgba(18, 18, 24, 0.98);
-  backdrop-filter: blur(20px);
+  backdrop-filter: blur(24px);
   border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 16px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.85);
-  padding: 20px;
-  z-index: 600;
+  border-radius: 14px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.95);
+  padding: 14px;
+  z-index: 9999;
+  box-sizing: border-box;
+  overflow: hidden;
   animation: fadeIn 0.18s ease;
 }
+
 .nav-comedians-modal-header {
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
+
 .nav-comedians-search-box {
   position: relative;
   display: flex;
   align-items: center;
+  width: 100%;
 }
+
 .nav-search-icon-inside {
   position: absolute;
-  left: 14px;
+  left: 12px;
   color: #9ca3af;
+  pointer-events: none;
 }
+
 .nav-comedians-input {
   width: 100%;
-  padding: 12px 14px 12px 42px;
+  padding: 10px 14px 10px 38px;
   background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
   color: #ffffff;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   outline: none;
+  box-sizing: border-box;
   transition: all 0.2s ease;
 }
+
 .nav-comedians-input:focus {
   border-color: #e50914;
   background: rgba(255, 255, 255, 0.12);
 }
+
 .nav-clear-search {
   position: absolute;
-  right: 12px;
+  right: 10px;
   background: transparent;
   border: none;
   color: #9ca3af;
   cursor: pointer;
+  padding: 4px;
 }
+
 .nav-comedians-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
   max-height: 380px;
   overflow-y: auto;
-  padding-right: 4px;
+  overflow-x: hidden !important;
+  padding: 2px 4px 2px 2px;
+  box-sizing: border-box;
 }
+
+.nav-comedians-grid::-webkit-scrollbar {
+  width: 6px;
+}
+
+.nav-comedians-grid::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 3px;
+}
+
+.nav-comedians-grid::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.nav-comedians-grid::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
 .nav-comedian-card-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 8px 12px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.04);
+  gap: 10px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
   text-decoration: none;
-  transition: all 0.2s ease;
+  min-width: 0;
+  box-sizing: border-box;
   border: 1px solid transparent;
+  transition: all 0.18s ease;
 }
+
 .nav-comedian-card-item:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(229, 9, 20, 0.4);
-  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(229, 9, 20, 0.5);
+  transform: translateY(-1px);
 }
+
 .nav-comedian-avatar {
-  width: 44px;
-  height: 44px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   object-fit: cover;
   background: #222;
-  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
   flex-shrink: 0;
 }
+
 .nav-comedian-info {
   display: flex;
   flex-direction: column;
+  min-width: 0;
   overflow: hidden;
 }
+
 .nav-comedian-name {
-  font-size: 0.95rem;
+  font-size: 0.86rem;
   font-weight: 700;
   color: #ffffff;
   white-space: nowrap;
-  text-overflow: ellipsis;
   overflow: hidden;
+  text-overflow: ellipsis;
 }
+
 .nav-comedian-count {
-  font-size: 0.78rem;
-  color: #9ca3af;
+  font-size: 0.74rem;
+  color: #888888;
+  white-space: nowrap;
 }
 .nav-comedians-empty {
   grid-column: span 2;
@@ -1484,17 +1529,88 @@ input, select { font-family: inherit; }
 }
 
 .video-page-section {
-  padding: 20px 4% 40px;
+  padding: 20px 4% 30px;
 }
 .video-page-section-title {
   font-family: var(--font-display);
-  font-size: 1.5rem; font-weight: 600;
-  margin-bottom: 20px;
+  font-size: 1.4rem; 
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 16px;
 }
-.video-page-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-  gap: 20px;
+
+/* Compact Recommendation Grid */
+.more-videos-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(175px, 1fr)) !important;
+  gap: 12px 10px !important;
+  padding: 8px 0 16px !important;
+}
+.more-videos-grid .video-card {
+  border-radius: 4px;
+}
+.more-videos-grid .video-hover-card {
+  width: 130% !important;
+  top: -10% !important;
+}
+
+/* Netflix-style Detailed About Section (Matches media_1787300939550.png) */
+.netflix-about-container {
+  padding: 30px 4% 60px;
+  max-width: 950px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: 20px;
+}
+.netflix-about-header {
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 20px;
+  font-family: var(--font-display);
+}
+.netflix-about-title-highlight {
+  font-weight: 800;
+  color: #ffffff;
+}
+.netflix-about-details-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.netflix-about-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+.netflix-about-label {
+  color: #888888;
+  min-width: 140px;
+  flex-shrink: 0;
+  font-weight: 500;
+}
+.netflix-about-val {
+  color: #e5e5e5;
+}
+.netflix-about-maturity-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.netflix-about-maturity-badge {
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.08);
+  padding: 1px 6px;
+  border-radius: 2px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+.netflix-about-maturity-desc {
+  color: #999999;
+  font-size: 0.84rem;
 }
 
 @media (max-width: 768px) {

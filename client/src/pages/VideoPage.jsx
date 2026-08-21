@@ -571,6 +571,59 @@ export default function VideoPage() {
         </div>
       )}
 
+      {/* Netflix-style Detailed About Section (Matches user screenshot) */}
+      <div className="netflix-about-container">
+        <h2 className="netflix-about-header">
+          About <span className="netflix-about-title-highlight">{video.title}</span>
+        </h2>
+        
+        <div className="netflix-about-details-list">
+          <div className="netflix-about-row">
+            <span className="netflix-about-label">Creators:</span>
+            <span className="netflix-about-val">
+              <strong style={{ color: '#fff' }}>{video.comedian_name}</strong>
+            </span>
+          </div>
+
+          <div className="netflix-about-row">
+            <span className="netflix-about-label">Cast:</span>
+            <span className="netflix-about-val">
+              {video.comedian_name}, Stand-Up Live Audience
+            </span>
+          </div>
+
+          <div className="netflix-about-row">
+            <span className="netflix-about-label">Genres:</span>
+            <span className="netflix-about-val">
+              {genreLabels.length > 0 ? genreLabels.join(', ') : 'Stand-Up Comedy, Hindi Comedy, Comedy Specials'}
+            </span>
+          </div>
+
+          <div className="netflix-about-row">
+            <span className="netflix-about-label">This Special Is:</span>
+            <span className="netflix-about-val">
+              {video.tags && video.tags.length > 0 
+                ? video.tags.map(t => t.tag_name.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())).join(', ')
+                : 'Hilarious, Relatable, Witty, High Energy'}
+            </span>
+          </div>
+
+          <div className="netflix-about-row">
+            <span className="netflix-about-label">Maturity Rating:</span>
+            <div className="netflix-about-maturity-wrap">
+              <span className="netflix-about-maturity-badge">
+                {video.suggested_rating || 'U/A 16+'}
+              </span>
+              <span className="netflix-about-maturity-desc">
+                {video.suggested_rating === 'A' || video.suggested_rating === '18+'
+                  ? 'sex, substances, coarse language • Content restricted to adults'
+                  : 'mild language, crude humor • Suitable with parental guidance'}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Video Modal fallback for embedded previews */}
       {selectedModalVideoId && (
         <VideoModal videoId={selectedModalVideoId} onClose={() => setSelectedModalVideoId(null)} />
