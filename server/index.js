@@ -474,6 +474,7 @@ app.get('/api/categories', asyncHandler(async (req, res) => {
        OR LOWER(v.title) LIKE '%crowd%'
     ORDER BY v.view_count DESC
     LIMIT 10
+  `);
   if (topCrowdWork.length > 0) categories.push({ title: topCrowdWork.length >= 10 ? 'Top 10 Crowd Work' : 'Top Crowd Work', videos: topCrowdWork, isTop10: true });
 
   res.json(categories);
