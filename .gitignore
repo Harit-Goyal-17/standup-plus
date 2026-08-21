@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# Environment Variables & Secrets
+.env
+server/.env
+*.env.local
+
+# OS Generated Files
+.DS_Store
+Thumbs.db
+
+# Compiled C++ Executables & Object Files
+*.o
+*.out
+fetch_standup_data
+suggest_tags
+import_to_db
+clean_dataset
+filter_high_quality
+verify_and_filter
+
+# Logs & Temp Files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.vscode/
+
+# Keep dist for direct unified serving or rebuild on deploy

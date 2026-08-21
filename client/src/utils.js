@@ -1,0 +1,243 @@
+export function formatDuration(seconds) {
+  if (!seconds) return '0s';
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m}m`;
+}
+
+export function formatViews(count) {
+  if (!count) return '0';
+  if (count >= 1000000) return (count / 1000000).toFixed(1) + 'M';
+  if (count >= 1000) return (count / 1000).toFixed(1) + 'K';
+  return count.toString();
+}
+
+export function formatDate(isoString) {
+  if (!isoString) return '';
+  const date = new Date(isoString);
+  return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+}
+
+export function getRatingColor(rating) {
+  const map = {
+    'U/A': 'var(--rating-ua)',
+    '13+': 'var(--rating-13)',
+    '16+': 'var(--rating-16)',
+    '18+': 'var(--rating-18)',
+  };
+  return map[rating] || 'var(--rating-ua)';
+}
+
+export function getTagColor(tagType) {
+  const map = {
+    'style': 'tag-style',
+    'tone': 'tag-tone',
+    'theme': 'tag-theme'
+  };
+  return map[tagType] || 'tag-style';
+}
+
+export function cleanHandle(handle) {
+  if (!handle) return '';
+  let name = handle.replace(/^[@\s]+/, '').replace(/standup|comedy|official|unofficial|vlogs|tv|live|_/gi, ' ').trim();
+  name = name.replace(/([a-z])([A-Z])/g, '$1 $2').trim();
+  return name.split(/\s+/).filter(Boolean).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+}
+
+export function getCastMembers(video) {
+  if (!video) return [];
+  const cast = [];
+  if (video.comedian_name) {
+    cast.push(video.comedian_name);
+  }
+
+  const title = video.title || '';
+  const ftMatch = title.match(/(?:ft\.?|feat\.?|with|featuring)\s+(.*)/i);
+  if (ftMatch && ftMatch[1]) {
+    const rawGuests = ftMatch[1];
+    const guestTokens = rawGuests.split(/[,&+]|\band\b|@/i);
+    guestTokens.forEach(t => {
+      const cleaned = cleanHandle(t);
+      if (cleaned && cleaned.length > 2 && !cast.includes(cleaned) && !/^\d+$/.test(cleaned)) {
+        cast.push(cleaned);
+      }
+    });
+  }
+  return cast.slice(0, 8);
+}
+
+export function getVideoGenres(video) {
+  if (!video) return ['Stand-Up Comedy', 'Hindi Comedy'];
+  const genres = new Set(['Stand-Up Comedy']);
+  
+  const title = (video.title || '').toLowerCase();
+  const tags = video.tags || [];
+
+  if (video.duration_seconds >= 2700) {
+    genres.add('Comedy Specials');
+  } else if (video.duration_seconds < 900) {
+    genres.add('Stand-Up Bits');
+  }
+
+  if (title.includes('roast') || title.includes('brocode')) {
+    genres.add('Roast Battles');
+  }
+  if (title.includes('crowd work') || title.includes('audience interaction') || title.includes('crowd')) {
+    genres.add('Crowd Work & Improv');
+  }
+  if (title.includes('pitch please') || title.includes('game show') || title.includes('akal ke ghode') || title.includes('lie hard') || title.includes('judge me') || title.includes('drunks')) {
+    genres.add('Comedy Game Shows');
+  }
+  if (title.includes('podcast') || title.includes('talk') || title.includes('chaar yaar') || title.includes('charcha')) {
+    genres.add('Comedy Talk Shows');
+  }
+
+  tags.forEach(t => {
+    if (t.tag_type === 'theme') {
+      if (t.tag_name.includes('relationship')) genres.add('Romantic Comedy');
+      else if (t.tag_name.includes('corporate') || t.tag_name.includes('work')) genres.add('Workplace Comedy');
+      else if (t.tag_name.includes('family')) genres.add('Family & Upbringing');
+      else if (t.tag_name.includes('cultural') || t.tag_name.includes('political')) genres.add('Social Satire');
+      else {
+        const formatted = t.tag_name.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        genres.add(formatted);
+      }
+    }
+  });
+
+  genres.add('Hindi Comedy');
+  return Array.from(genres).slice(0, 6);
+}
+
+export function getVideoMoods(video) {
+  if (!video) return ['Witty', 'Relatable'];
+  const moods = new Set();
+  const title = (video.title || '').toLowerCase();
+  const tags = video.tags || [];
+
+  tags.forEach(t => {
+    if (t.tag_type === 'tone' || t.tag_type === 'style') {
+      const name = t.tag_name.toLowerCase();
+      if (name.includes('dark')) { moods.add('Dark'); moods.add('Cynical'); }
+      else if (name.includes('sarcastic') || name.includes('biting')) { moods.add('Sarcastic'); moods.add('Biting'); }
+      else if (name.includes('wholesome') || name.includes('warm')) { moods.add('Wholesome'); moods.add('Feel-Good'); }
+      else if (name.includes('absurdist') || name.includes('surreal')) { moods.add('Absurd'); moods.add('Offbeat'); }
+      else if (name.includes('deadpan')) { moods.add('Deadpan'); moods.add('Understated'); }
+      else if (name.includes('crowd-work')) { moods.add('Spontaneous'); moods.add('Interactive'); }
+      else if (name.includes('storytelling')) { moods.add('Storytelling'); moods.add('Nostalgic'); }
+      else if (name.includes('energetic')) { moods.add('High-Energy'); moods.add('Lively'); }
+    }
+  });
+
+  if (title.includes('roast') || video.suggested_rating === '18+') {
+    moods.add('Unfiltered');
+    moods.add('Savage');
+  }
+
+  if (moods.size === 0) {
+    moods.add('Witty');
+    moods.add('Hilarious');
+    moods.add('Relatable');
+  }
+
+  return Array.from(moods).slice(0, 4);
+}
+
+export function getMaturityInfo(rating) {
+  const r = (rating || 'U/A').toUpperCase();
+  if (r.includes('18')) {
+    return {
+      badge: 'A',
+      advisories: 'crude humor, coarse language, mature themes, adult references',
+      warning: 'Content restricted to adults (18+)'
+    };
+  }
+  if (r.includes('16')) {
+    return {
+      badge: 'U/A 16+',
+      advisories: 'coarse language, mature humor, contemporary themes',
+      warning: 'Suitable for viewers 16 years and older'
+    };
+  }
+  if (r.includes('13')) {
+    return {
+      badge: 'U/A 13+',
+      advisories: 'moderate language, suggestive humor, mild crude humor',
+      warning: 'Parental guidance suggested for viewers under 13'
+    };
+  }
+  return {
+    badge: 'U/A',
+    advisories: 'family-friendly humor, clean comedy, everyday situations',
+    warning: 'Suitable for all audiences'
+  };
+}
+
+export function getDotSeparatedTopics(video) {
+  if (!video) return ['Stand-Up', 'Relatable', 'Hindi Comedy'];
+  const topics = [];
+  
+  // Extract topics from video title keywords
+  const title = (video.title || '').toLowerCase();
+  if (title.includes('upsc') || title.includes('college') || title.includes('hostel')) topics.push('College Life');
+  else if (title.includes('cheating') || title.includes('school')) topics.push('School Days');
+  else if (title.includes('latent') || title.includes('game') || title.includes('pitch')) topics.push('Panel Show');
+  else if (title.includes('roast') || title.includes('brocode')) topics.push('Roast Battle');
+  else if (title.includes('relationship') || title.includes('dating') || title.includes('marriage')) topics.push('Relationships');
+
+  // Extract from tags
+  const tags = video.tags || [];
+  tags.forEach(t => {
+    if (topics.length < 3) {
+      const name = t.tag_name.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+      if (!topics.includes(name)) topics.push(name);
+    }
+  });
+
+  // Extract from moods
+  const moods = getVideoMoods(video);
+  moods.forEach(m => {
+    if (topics.length < 3 && !topics.includes(m)) topics.push(m);
+  });
+
+  if (topics.length === 0) {
+    topics.push('Stand-Up Special', 'Relatable Humor', 'Hindi');
+  }
+
+  return topics.slice(0, 3);
+}
+
+export const COMEDIAN_AVATARS = [
+  { id: 'samay', name: 'Samay Raina', url: 'https://yt3.ggpht.com/BjlTvqbbOUav0ULCGTSrZI0RVE7qEhiA1arHPVwNMlSheDtyVoE5MmdQkglNN4iMeL8A4_cihQ=s800-c-k-c0x00ffffff-no-rj' },
+  { id: 'zakir', name: 'Zakir Khan', url: 'https://yt3.ggpht.com/ytc/AIdro_n1IJy85RjuuYiZphsaRQnSeF1v6numV9-5Tn--R5NMvcQ=s800-c-k-c0x00ffffff-no-rj' },
+  { id: 'bassi', name: 'Anubhav Singh Bassi', url: 'https://yt3.ggpht.com/Vf-jYDyf1LfclP1TNrAHRq6NuoXTlU5-MpwmKfR6IcWqC_R8anDx3THr8s1GWpyxBviqXXs=s800-c-k-c0x00ffffff-no-rj' },
+  { id: 'gaurav', name: 'Gaurav Kapoor', url: '/images/comedians/gaurav_kapoor.jpg' },
+  { id: 'munawar', name: 'Munawar Faruqui', url: '/images/comedians/munawar_faruqui.jpg' },
+  { id: 'aakash', name: 'Aakash Gupta', url: 'https://yt3.ggpht.com/ytc/AIdro_kWjbRKzOhX9prGuQCFMFvttIQmuoOGJkczm4HPOWk5OWw=s800-c-k-c0x00ffffff-no-rj' },
+  { id: 'rahul-sub', name: 'Rahul Subramanian', url: 'https://yt3.ggpht.com/bxVxic_WY1hs-8eT-1F0UyF4I8ihMVt5RIxZ_KUWGo2ESBwI_xvBG7mreIHfYAprretXZm261M0=s800-c-k-c0x00ffffff-no-rj' },
+  { id: 'prashasti', name: 'Prashasti Singh', url: '/images/comedians/prashasti_singh.jpg' },
+  { id: 'upmanyu', name: 'Abhishek Upmanyu', url: 'https://yt3.ggpht.com/ytc/AIdro_lTc4pjHpph8bWvCOFNlTFBCSZTZlQlul82tX8zyChB1jg=s800-c-k-c0x00ffffff-no-rj' },
+  { id: 'biswa', name: 'Biswa Kalyan Rath', url: '/images/comedians/biswa_kalyan_rath.jpg' },
+  { id: 'kenny', name: 'Kenny Sebastian', url: '/images/comedians/kenny_sebastian.jpg' },
+  { id: 'kanan', name: 'Kanan Gill', url: '/images/comedians/kanan_gill.jpg' },
+  { id: 'swati', name: 'Swati Sachdeva', url: '/images/comedians/swati_sachdeva.jpg' },
+  { id: 'vir', name: 'Vir Das', url: 'https://i.ytimg.com/vi/xU-zhajzad4/hqdefault.jpg' },
+  { id: 'kunal', name: 'Kunal Kamra', url: '/images/comedians/kunal_kamra.jpg' },
+  { id: 'harsh', name: 'Harsh Gujral', url: 'https://yt3.ggpht.com/Xu62-aG0LyWMHDGThUQWnP_0mpdQf1UUzyMSYLmplC6dq9YaSnM8bhxFAWYIHIjxovXZcpo1Fg=s800-c-k-c0x00ffffff-no-rj' },
+  { id: 'shashi', name: 'Shashi Dhiman', url: 'https://yt3.ggpht.com/d78O7wxPNXfeZfy9DK0SAtCn3bvE2iZjNNJNh8JSDa3naNoDpv5lG8do56CoK0OR0zM2PlACdA=s800-c-k-c0x00ffffff-no-rj' },
+  { id: 'amit', name: 'Amit Tandon', url: 'https://yt3.ggpht.com/ytc/AIdro_k-CJnKN0XWR0EbBl_sARNZHjIJrK5Ui0iayx_fA1-k8m1K=s800-c-k-c0x00ffffff-no-rj' }
+];
+
+export const CLASSIC_AVATARS = [
+  { id: 'red-bot', name: 'StandUp+ Red', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=red-bot&backgroundColor=e50914' },
+  { id: 'yellow-bot', name: 'Gold Spark', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=yellow-bot&backgroundColor=f59e0b' },
+  { id: 'blue-bot', name: 'Cyber Blue', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=blue-bot&backgroundColor=3b82f6' },
+  { id: 'purple-bot', name: 'Neon Purple', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=purple-bot&backgroundColor=8b5cf6' },
+  { id: 'green-bot', name: 'Emerald Vibe', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=green-bot&backgroundColor=10b981' },
+  { id: 'pink-bot', name: 'Pink Glow', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=pink-bot&backgroundColor=ec4899' }
+];
+
+export const ALL_AVATARS = [...COMEDIAN_AVATARS, ...CLASSIC_AVATARS];
+
+export const API_BASE = import.meta.env.VITE_API_URL || (typeof window !== 'undefined' && window.location.hostname !== 'localhost' ? '/api' : 'http://localhost:3001/api');
