@@ -172,7 +172,7 @@ export default function ProfileSelector() {
             </h1>
           )}
 
-          <div className="netflix-pin-box-row">
+          <div className={`netflix-pin-box-row ${pinError ? 'auth-shake' : ''}`}>
             {enteredPin.map((digit, idx) => (
               <input
                 key={idx}
@@ -351,7 +351,6 @@ export default function ProfileSelector() {
                           e.target.src = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(item.name)}&chars=2`;
                         }}
                       />
-                      <span className="profile-avatar-caption">{item.name}</span>
                       {selectedAvatar === item.url && <div className="avatar-check"><Check size={14} /></div>}
                     </button>
                   ))}

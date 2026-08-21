@@ -131,8 +131,8 @@ export default function ProfilePage() {
       {/* Top Header */}
       <div className="profile-settings-header">
         <div>
-          <h1 className="profile-settings-title">Account & Settings</h1>
-          <p className="profile-settings-subtitle">Manage your stand-up profile, avatars, security and membership plan</p>
+          <h1 style={{ fontSize: '1.8rem', fontWeight: 500, color: '#ffffff', marginBottom: 6 }}>Account & Settings</h1>
+          <p style={{ color: '#9ca3af', fontSize: '0.9rem', fontWeight: 400 }}>Manage your profile, avatars, security and membership plan</p>
         </div>
         <div className="profile-settings-top-actions">
           <button 
@@ -153,6 +153,14 @@ export default function ProfilePage() {
         >
           <User size={18} />
           <span>Edit Profile & Avatars</span>
+        </button>
+
+        <button 
+          className={`profile-tab-btn ${activeTab === 'security' ? 'active' : ''}`}
+          onClick={() => setActiveTab('security')}
+        >
+          <Lock size={18} />
+          <span>Security & PIN</span>
         </button>
 
         <button 
@@ -201,7 +209,7 @@ export default function ProfilePage() {
                   className={`avatar-cat-pill ${avatarCategory === 'classics' ? 'active' : ''}`}
                   onClick={() => setAvatarCategory('classics')}
                 >
-                  🤖 Classic Netflix Icons ({CLASSIC_AVATARS.length})
+                  🤖 Classic Avatars ({CLASSIC_AVATARS.length})
                 </button>
               </div>
 
@@ -219,7 +227,6 @@ export default function ProfilePage() {
                       className="avatar-img-circle"
                       referrerPolicy="no-referrer"
                     />
-                    <span className="avatar-name-label">{cleanHandle(av.name)}</span>
                     {avatarUrl === av.url && (
                       <div className="avatar-selected-badge">
                         <Check size={14} color="#fff" />
@@ -242,44 +249,7 @@ export default function ProfilePage() {
               />
             </div>
 
-            {/* Profile Lock Section */}
-            <div className="profile-lock-box" style={{ marginTop: 24 }}>
-              <div className="profile-lock-header">
-                <div>
-                  <div className="profile-lock-title">
-                    <Lock size={18} color="#e50914" /> Profile Lock (4-Digit PIN)
-                  </div>
-                  <p className="profile-lock-desc">
-                    Require a 4-digit PIN to switch into this profile and keep your watch history private.
-                  </p>
-                </div>
-                <label className="toggle-switch">
-                  <input
-                    type="checkbox"
-                    checked={isLocked}
-                    onChange={(e) => setIsLocked(e.target.checked)}
-                  />
-                  <span className="toggle-slider"></span>
-                </label>
-              </div>
 
-              {isLocked && (
-                <div className="pin-input-container">
-                  <label className="profile-form-label">Set 4-Digit Security PIN</label>
-                  <input
-                    type="password"
-                    maxLength={4}
-                    className="pin-input-field"
-                    placeholder="••••"
-                    value={pin}
-                    onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
-                  />
-                  <span className="pin-helper-text">
-                    {activeProfile?.pin ? 'Enter a new 4-digit PIN to update, or leave blank to keep current PIN' : 'Enter 4 numbers'}
-                  </span>
-                </div>
-              )}
-            </div>
 
             {saveSuccess && (
               <div className="profile-save-toast">
@@ -302,6 +272,74 @@ export default function ProfilePage() {
               <Save size={18} /> {isSaving ? 'Saving Changes...' : 'Save Changes'}
             </button>
           </form>
+        </div>
+      )}
+
+      {/* Tab 1.5: Security & PIN */}
+      {activeTab === 'security' && (
+        <div className="profile-tab-content-card">
+          <h2 className="profile-section-heading">Security & PIN</h2>
+          <p className="profile-section-desc">Manage your profile lock and security settings.</p>
+
+          <div className="security-lock-card">
+            <div className="security-lock-status">
+              <div>
+                <div className="security-lock-label">
+                  <Lock size={18} color={isLocked ? "#e50914" : "#ffffff"} /> Profile Lock
+                </div>
+                <div className="security-lock-sublabel">
+                  {isLocked ? 'A PIN is required to access this profile.' : 'No PIN required to access this profile.'}
+                </div>
+              </div>
+              <label className="toggle-switch">
+                <input
+                  type="checkbox"
+                  checked={isLocked}
+                  onChange={(e) => setIsLocked(e.target.checked)}
+                />
+                <span className="toggle-slider"></span>
+              </label>
+            </div>
+
+            {isLocked && (
+              <>
+                <div className="security-pin-edit-section">
+                  <label className="profile-form-label">Update 4-Digit PIN</label>
+                  <input
+                    type="password"
+                    maxLength={4}
+                    className="pin-input-field"
+                    placeholder="••••"
+                    value={pin}
+                    onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
+                  />
+                  <div className="security-note">
+                    {activeProfile?.pin ? 'Enter a new 4-digit PIN to update, or leave blank to keep current PIN.' : 'Enter 4 numbers to set your PIN.'}
+                  </div>
+                </div>
+
+                <div className="security-actions">
+                  <button type="button" className="security-action-btn edit-pin" onClick={() => handleSaveProfile()}>
+                    Save PIN
+                  </button>
+                  <button type="button" className="security-action-btn delete-lock" onClick={() => { setIsLocked(false); setPin(''); handleSaveProfile(); }}>
+                    Remove Profile Lock
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+          
+          {saveSuccess && (
+            <div className="profile-save-toast">
+              <Check size={18} color="#10b981" /> Security changes saved successfully!
+            </div>
+          )}
+          {saveError && (
+            <div className="profile-save-toast" style={{ color: '#ef4444', background: 'rgba(239, 68, 68, 0.12)', borderColor: 'rgba(239, 68, 68, 0.3)' }}>
+              <AlertCircle size={18} color="#ef4444" /> {saveError}
+            </div>
+          )}
         </div>
       )}
 

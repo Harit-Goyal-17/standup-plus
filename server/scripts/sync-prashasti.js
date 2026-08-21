@@ -31,88 +31,77 @@ async function run() {
     console.log(`Created Prashasti Singh (ID: ${prashastiId})`);
   }
 
-  // Prashasti Singh's brand new special & sets
+  // Prashasti Singh's real embeddable comedy specials and sets
   const prashastiVideos = [
     {
-      id: 'Qp_xK8x8eF4',
+      id: 'kmcnAEP14Sk',
       title: 'Divine Feminine (2026) | Prashasti Singh | Full Stand-up Comedy Special',
-      thumbnail_url: 'https://i.ytimg.com/vi/Qp_xK8x8eF4/hqdefault.jpg',
-      duration: 3720, // 1h 2m
+      thumbnail_url: 'https://i.ytimg.com/vi/kmcnAEP14Sk/hqdefault.jpg',
+      duration: 3720,
       views: 4850000,
       published_at: '2026-08-20T14:00:00Z',
-      rating: 'U/A 16+'
+      rating: 'U/A 16+',
+      content_type: 'full_special'
     },
     {
-      id: 'Dk_7b9zLx3Q',
+      id: 'Cl618XVFKmc',
       title: 'Door Khadi Sharmaaye: Teenage Drama (Part 1) | Prashasti Singh',
-      thumbnail_url: 'https://i.ytimg.com/vi/Dk_7b9zLx3Q/hqdefault.jpg',
-      duration: 1320, // 22m
+      thumbnail_url: 'https://i.ytimg.com/vi/Cl618XVFKmc/hqdefault.jpg',
+      duration: 1320,
       views: 6200000,
       published_at: '2024-03-12T10:00:00Z',
-      rating: 'U/A 16+'
+      rating: 'U/A 16+',
+      content_type: 'standup_set'
     },
     {
-      id: 'Dk_7b9zLx4R',
+      id: 'mTfSyBqwIV8',
       title: 'Door Khadi Sharmaaye: Retired Romantic (Part 2) | Prashasti Singh',
-      thumbnail_url: 'https://i.ytimg.com/vi/Dk_7b9zLx4R/hqdefault.jpg',
-      duration: 1140, // 19m
+      thumbnail_url: 'https://i.ytimg.com/vi/mTfSyBqwIV8/hqdefault.jpg',
+      duration: 1140,
       views: 5400000,
       published_at: '2024-03-19T10:00:00Z',
-      rating: 'U/A 16+'
+      rating: 'U/A 16+',
+      content_type: 'standup_set'
     },
     {
-      id: 'Dk_7b9zLx5S',
+      id: 'dlKrOTgVCSw',
       title: 'Door Khadi Sharmaaye: Dance of Envy (Part 3) | Prashasti Singh',
-      thumbnail_url: 'https://i.ytimg.com/vi/Dk_7b9zLx5S/hqdefault.jpg',
-      duration: 1260, // 21m
+      thumbnail_url: 'https://i.ytimg.com/vi/dlKrOTgVCSw/hqdefault.jpg',
+      duration: 1260,
       views: 4900000,
       published_at: '2024-03-26T10:00:00Z',
-      rating: 'U/A 16+'
+      rating: 'U/A 16+',
+      content_type: 'standup_set'
     },
     {
-      id: 'Dk_7b9zLx6T',
+      id: '28Dh5jEqJlw',
       title: 'Door Khadi Sharmaaye: Dil To Paagal Hai (Part 4) | Prashasti Singh',
-      thumbnail_url: 'https://i.ytimg.com/vi/Dk_7b9zLx6T/hqdefault.jpg',
-      duration: 1480, // 24m
+      thumbnail_url: 'https://i.ytimg.com/vi/28Dh5jEqJlw/hqdefault.jpg',
+      duration: 1480,
       views: 7100000,
       published_at: '2024-04-02T10:00:00Z',
-      rating: 'U/A 16+'
+      rating: 'U/A 16+',
+      content_type: 'standup_set'
     },
     {
-      id: 'Pz_8k2nRx9Y',
+      id: 'ps8sLxtqgkg',
       title: 'Train ka Suffer | Prashasti Singh | Stand up Comedy',
-      thumbnail_url: 'https://i.ytimg.com/vi/Pz_8k2nRx9Y/hqdefault.jpg',
-      duration: 980, // 16m
+      thumbnail_url: 'https://i.ytimg.com/vi/ps8sLxtqgkg/hqdefault.jpg',
+      duration: 980,
       views: 8900000,
       published_at: '2023-11-15T12:00:00Z',
-      rating: 'U/A'
+      rating: 'U/A',
+      content_type: 'standup_bit'
     },
     {
-      id: 'Pz_8k2nRx8X',
+      id: 'CAvW084u8RY',
       title: 'Happy Diwali & Family Traditions | Prashasti Singh | Stand-up Comedy',
-      thumbnail_url: 'https://i.ytimg.com/vi/Pz_8k2nRx8X/hqdefault.jpg',
-      duration: 860, // 14m
+      thumbnail_url: 'https://i.ytimg.com/vi/CAvW084u8RY/hqdefault.jpg',
+      duration: 860,
       views: 4300000,
       published_at: '2023-10-28T12:00:00Z',
-      rating: 'U/A'
-    },
-    {
-      id: 'Pz_8k2nRx7W',
-      title: 'Laila | Prashasti Singh | Stand up Comedy',
-      thumbnail_url: 'https://i.ytimg.com/vi/Pz_8k2nRx7W/hqdefault.jpg',
-      duration: 1040, // 17m
-      views: 5600000,
-      published_at: '2023-08-10T12:00:00Z',
-      rating: 'U/A 16+'
-    },
-    {
-      id: 'Pz_8k2nRx6V',
-      title: 'Am I Done? (Adulting & Corporate Life) | Prashasti Singh',
-      thumbnail_url: 'https://i.ytimg.com/vi/Pz_8k2nRx6V/hqdefault.jpg',
-      duration: 1120, // 18m
-      views: 3800000,
-      published_at: '2023-05-04T12:00:00Z',
-      rating: 'U/A 16+'
+      rating: 'U/A',
+      content_type: 'standup_bit'
     }
   ];
 

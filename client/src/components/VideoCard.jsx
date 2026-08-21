@@ -123,6 +123,11 @@ export default function VideoCard({ video, onClick }) {
         <img src={video.thumbnail_url} alt={video.title} className="video-thumb" loading="lazy" />
         <span className="duration-badge">{formatDuration(video.duration_seconds)}</span>
         
+        {/* Recently Added Badge */}
+        {(video.isRecentlyAdded || (video.published_at && new Date(video.published_at) > new Date('2024-01-01'))) && (
+          <span className="recently-added-badge">Recently Added</span>
+        )}
+
         {/* Netflix Red Progress Bar on Base Card */}
         {progressPercent > 0 && (
           <div className="video-progress-bar-container">
@@ -134,6 +139,9 @@ export default function VideoCard({ video, onClick }) {
       {/* Netflix-style hover expansion card */}
       <div className={`video-hover-card align-${alignment}`}>
         <div className="video-hover-media-wrapper">
+          {(video.isRecentlyAdded || (video.published_at && new Date(video.published_at) > new Date('2024-01-01'))) && (
+            <span className="recently-added-badge hover">Recently Added</span>
+          )}
           {isPlayingPreview ? (
             <iframe
               src={`https://www.youtube.com/embed/${video.video_id}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&playsinline=1&enablejsapi=1&start=${previewStart}`}

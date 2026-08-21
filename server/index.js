@@ -334,7 +334,7 @@ app.get('/api/categories', asyncHandler(async (req, res) => {
     ORDER BY v.published_at DESC
     LIMIT 10
   `);
-  if (newVideos.length > 0) categories.push({ title: 'New Releases', videos: newVideos });
+  if (newVideos.length > 0) categories.push({ title: '✨ Recently Added', videos: newVideos, isRecentlyAdded: true });
 
   const darkVideos = getCategoryVideos(`
     SELECT DISTINCT v.*, c.name as comedian_name 
@@ -354,7 +354,14 @@ app.get('/api/categories', asyncHandler(async (req, res) => {
     JOIN comedians c ON v.comedian_id = c.comedian_id
     JOIN video_tags vt ON v.video_id = vt.video_id
     JOIN tags t ON vt.tag_id = t.tag_id
-    WHERE t.tag_name IN ('wholesome-and-lighthearted', 'nostalgic-and-warm', 'family-and-upbringing') AND v.duration_seconds >= 1800
+    WHERE (
+      (t.tag_name IN ('wholesome-and-lighthearted', 'nostalgic-and-warm') AND t.tag_type = 'tone')
+      OR 
+      (t.tag_name = 'family-and-upbringing' AND t.tag_type = 'theme' AND v.video_id IN (
+        SELECT vt2.video_id FROM video_tags vt2 JOIN tags t2 ON vt2.tag_id = t2.tag_id 
+        WHERE t2.tag_name IN ('wholesome-and-lighthearted', 'nostalgic-and-warm', 'self-deprecating-humor') AND t2.tag_type = 'tone'
+      ))
+    ) AND v.duration_seconds >= 1800
     ORDER BY RANDOM()
     LIMIT 10
   `);
@@ -478,6 +485,57 @@ app.get('/api/categories', asyncHandler(async (req, res) => {
 // AUTH ENDPOINTS
 // ====================
 
+function isValidEmail(email) {
+  if (!email || typeof email !== 'string') return false;
+  const clean = email.trim().toLowerCase();
+  
+  // RFC 5322 standard pattern
+  const basicRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,10}$/;
+  if (!basicRegex.test(clean)) return false;
+
+  const parts = clean.split('@');
+  if (parts.length !== 2) return false;
+  const [localPart, domain] = parts;
+  if (!localPart || !domain || localPart.length > 64) return false;
+
+  // Catch common typo domains (e.g. gmail.cut, gmail.con, gamil.com)
+  const typoDomainPatterns = [
+    /^gmail\.(?!com$)[a-z]+$/,
+    /^yahoo\.(?!com$|co\.in$|in$)[a-z.]+$/,
+    /^outlook\.(?!com$|in$)[a-z.]+$/,
+    /^hotmail\.(?!com$|co\.in$)[a-z.]+$/,
+    /^icloud\.(?!com$)[a-z]+$/,
+    /^gamil\./,
+    /^gmial\./,
+    /^gmaill\./,
+    /^yaho\./,
+    /^outlok\./,
+    /^hotmial\./
+  ];
+
+  for (const pattern of typoDomainPatterns) {
+    if (pattern.test(domain)) return false;
+  }
+
+  // Valid Top-Level Domains list
+  const validTLDs = [
+    'com', 'in', 'org', 'net', 'edu', 'gov', 'mil', 'co', 'io', 'ai', 'app', 'dev', 'me',
+    'uk', 'ca', 'au', 'de', 'fr', 'jp', 'cn', 'br', 'ru', 'ch', 'it', 'nl', 'se', 'no', 'es',
+    'co.in', 'co.uk', 'ac.in', 'gov.in', 'org.in', 'net.in', 'edu.in'
+  ];
+
+  const domainParts = domain.split('.');
+  if (domainParts.length < 2) return false;
+  const tld = domainParts.slice(1).join('.');
+  const lastPart = domainParts[domainParts.length - 1];
+
+  if (!validTLDs.includes(tld) && !validTLDs.includes(lastPart)) {
+    return false;
+  }
+
+  return true;
+}
+
 app.post('/api/auth/register', asyncHandler(async (req, res) => {
   const { username, email, password } = req.body;
   if (!username || !email || !password) return res.status(400).json({ error: 'Missing required fields' });
@@ -485,10 +543,9 @@ app.post('/api/auth/register', asyncHandler(async (req, res) => {
   const cleanEmail = email.trim().toLowerCase();
   const cleanUsername = username.trim();
 
-  // Strict Real Email Format Validation
-  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-  if (!emailRegex.test(cleanEmail)) {
-    return res.status(400).json({ error: 'Please enter a valid, real email address (e.g. name@domain.com).' });
+  // Strict Real Email Format & Typo Validation
+  if (!isValidEmail(cleanEmail)) {
+    return res.status(400).json({ error: 'Please enter a valid, real email address (e.g. name@gmail.com).' });
   }
 
   // Validate Password Complexity
