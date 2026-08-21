@@ -27,6 +27,11 @@ export default function VideoModal({ videoId, onClose }) {
   };
 
   useEffect(() => {
+    if (!user && videoId) {
+      setAuthModalOpen(true);
+      onClose();
+      return;
+    }
     if (!videoId) return;
     setLoading(true);
     fetch(`${API_BASE}/videos/${videoId}`)

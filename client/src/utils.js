@@ -209,24 +209,25 @@ export function getDotSeparatedTopics(video) {
 }
 
 export const COMEDIAN_AVATARS = [
-  { id: 'samay', name: 'Samay Raina', url: 'https://yt3.ggpht.com/BjlTvqbbOUav0ULCGTSrZI0RVE7qEhiA1arHPVwNMlSheDtyVoE5MmdQkglNN4iMeL8A4_cihQ=s800-c-k-c0x00ffffff-no-rj' },
-  { id: 'zakir', name: 'Zakir Khan', url: 'https://yt3.ggpht.com/ytc/AIdro_n1IJy85RjuuYiZphsaRQnSeF1v6numV9-5Tn--R5NMvcQ=s800-c-k-c0x00ffffff-no-rj' },
-  { id: 'bassi', name: 'Anubhav Singh Bassi', url: 'https://yt3.ggpht.com/Vf-jYDyf1LfclP1TNrAHRq6NuoXTlU5-MpwmKfR6IcWqC_R8anDx3THr8s1GWpyxBviqXXs=s800-c-k-c0x00ffffff-no-rj' },
+  { id: 'zakir', name: 'Zakir Khan', url: '/images/comedians/zakir_khan.jpg' },
+  { id: 'samay', name: 'Samay Raina', url: '/images/comedians/samay_raina.jpg' },
+  { id: 'bassi', name: 'Anubhav Singh Bassi', url: '/images/comedians/anubhav_singh_bassi.jpg' },
+  { id: 'upmanyu', name: 'Abhishek Upmanyu', url: '/images/comedians/abhishek_upmanyu.jpg' },
+  { id: 'aakash', name: 'Aakash Gupta', url: '/images/comedians/aakash_gupta.jpg' },
   { id: 'gaurav', name: 'Gaurav Kapoor', url: '/images/comedians/gaurav_kapoor.jpg' },
   { id: 'munawar', name: 'Munawar Faruqui', url: '/images/comedians/munawar_faruqui.jpg' },
-  { id: 'aakash', name: 'Aakash Gupta', url: 'https://yt3.ggpht.com/ytc/AIdro_kWjbRKzOhX9prGuQCFMFvttIQmuoOGJkczm4HPOWk5OWw=s800-c-k-c0x00ffffff-no-rj' },
-  { id: 'rahul-sub', name: 'Rahul Subramanian', url: 'https://yt3.ggpht.com/bxVxic_WY1hs-8eT-1F0UyF4I8ihMVt5RIxZ_KUWGo2ESBwI_xvBG7mreIHfYAprretXZm261M0=s800-c-k-c0x00ffffff-no-rj' },
+  { id: 'rahul-sub', name: 'Rahul Subramanian', url: '/images/comedians/rahul_subramanian.jpg' },
   { id: 'prashasti', name: 'Prashasti Singh', url: '/images/comedians/prashasti_singh.jpg' },
-  { id: 'upmanyu', name: 'Abhishek Upmanyu', url: 'https://yt3.ggpht.com/ytc/AIdro_lTc4pjHpph8bWvCOFNlTFBCSZTZlQlul82tX8zyChB1jg=s800-c-k-c0x00ffffff-no-rj' },
   { id: 'biswa', name: 'Biswa Kalyan Rath', url: '/images/comedians/biswa_kalyan_rath.jpg' },
   { id: 'kenny', name: 'Kenny Sebastian', url: '/images/comedians/kenny_sebastian.jpg' },
   { id: 'kanan', name: 'Kanan Gill', url: '/images/comedians/kanan_gill.jpg' },
   { id: 'swati', name: 'Swati Sachdeva', url: '/images/comedians/swati_sachdeva.jpg' },
-  { id: 'vir', name: 'Vir Das', url: 'https://i.ytimg.com/vi/xU-zhajzad4/hqdefault.jpg' },
   { id: 'kunal', name: 'Kunal Kamra', url: '/images/comedians/kunal_kamra.jpg' },
-  { id: 'harsh', name: 'Harsh Gujral', url: 'https://yt3.ggpht.com/Xu62-aG0LyWMHDGThUQWnP_0mpdQf1UUzyMSYLmplC6dq9YaSnM8bhxFAWYIHIjxovXZcpo1Fg=s800-c-k-c0x00ffffff-no-rj' },
-  { id: 'shashi', name: 'Shashi Dhiman', url: 'https://yt3.ggpht.com/d78O7wxPNXfeZfy9DK0SAtCn3bvE2iZjNNJNh8JSDa3naNoDpv5lG8do56CoK0OR0zM2PlACdA=s800-c-k-c0x00ffffff-no-rj' },
-  { id: 'amit', name: 'Amit Tandon', url: 'https://yt3.ggpht.com/ytc/AIdro_k-CJnKN0XWR0EbBl_sARNZHjIJrK5Ui0iayx_fA1-k8m1K=s800-c-k-c0x00ffffff-no-rj' }
+  { id: 'harsh', name: 'Harsh Gujral', url: '/images/comedians/harsh_gujral.jpg' },
+  { id: 'gurleen', name: 'Gurleen Pannu', url: '/images/comedians/gurleen_pannu.jpg' },
+  { id: 'shashi', name: 'Shashi Dhiman', url: '/images/comedians/shashi_dhiman.jpg' },
+  { id: 'amit', name: 'Amit Tandon', url: '/images/comedians/amit_tandon.jpg' },
+  { id: 'jaspreet', name: 'Jaspreet Singh', url: '/images/comedians/jaspreet_singh.jpg' }
 ];
 
 export const CLASSIC_AVATARS = [

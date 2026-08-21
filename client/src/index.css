@@ -3047,17 +3047,36 @@ input:checked + .toggle-slider:before {
   transform: translateX(20px);
 }
 
+.profile-modal-backdrop {
+  position: fixed !important;
+  inset: 0 !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  background: rgba(0, 0, 0, 0.85) !important;
+  backdrop-filter: blur(8px) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 99999 !important;
+  padding: 20px !important;
+}
+
 .profile-edit-modal {
   background: #181818;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 16px;
   padding: 28px 32px;
   width: 100%;
-  max-width: 520px;
-  max-height: 85vh;
+  max-width: 540px;
+  max-height: 88vh;
   overflow-y: auto;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.95);
-  animation: scaleIn 0.25s ease;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.95);
+  animation: scaleIn 0.25s cubic-bezier(0.2, 0, 0.2, 1);
+  position: relative;
+  z-index: 100000;
+  margin: auto;
 }
 
 .profile-edit-header {

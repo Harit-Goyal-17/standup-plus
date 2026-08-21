@@ -7,7 +7,7 @@ import { useAuth } from '../context/AuthContext';
 export default function ShowsPage() {
   const { showId } = useParams();
   const navigate = useNavigate();
-  const { user, token, activeProfile } = useAuth();
+  const { user, token, activeProfile, setAuthModalOpen } = useAuth();
 
   const [shows, setShows] = useState([]);
   const [selectedShow, setSelectedShow] = useState(null);
@@ -84,6 +84,10 @@ export default function ShowsPage() {
   };
 
   const handlePlayEpisode = (ep) => {
+    if (!user) {
+      setAuthModalOpen(true);
+      return;
+    }
     navigate(`/watch/${ep.video_id}`);
   };
 

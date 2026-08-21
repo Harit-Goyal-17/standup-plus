@@ -122,6 +122,10 @@ export default function NewPopularPage() {
   };
 
   const handleVideoCardClick = (v) => {
+    if (!user) {
+      setAuthModalOpen(true);
+      return;
+    }
     navigate(`/watch/${v.video_id}`);
   };
 

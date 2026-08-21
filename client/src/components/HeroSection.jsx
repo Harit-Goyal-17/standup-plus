@@ -100,6 +100,10 @@ export default function HeroSection({ videos }) {
   };
 
   const handlePlay = () => {
+    if (!user) {
+      setAuthModalOpen(true);
+      return;
+    }
     navigate(`/watch/${current.video_id}`);
   };
 

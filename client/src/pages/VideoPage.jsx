@@ -50,6 +50,14 @@ export default function VideoPage() {
     5: "Absolute Masterclass 👑"
   };
 
+  // Require sign-in to watch any video
+  useEffect(() => {
+    if (!user) {
+      setAuthModalOpen(true);
+      navigate('/');
+    }
+  }, [user, navigate, setAuthModalOpen]);
+
   // 1. Fetch saved watch history on initial load
   useEffect(() => {
     if (!videoId) return;

@@ -4,7 +4,7 @@ import { formatDuration, formatViews, getRatingColor, getDotSeparatedTopics, API
 import { useAuth } from '../context/AuthContext';
 
 export default function VideoCard({ video, onClick }) {
-  const { user, token, activeProfile } = useAuth();
+  const { user, token, activeProfile, setAuthModalOpen } = useAuth();
   const [added, setAdded] = useState(false);
   const [liked, setLiked] = useState(false);
   const [showLikeAnim, setShowLikeAnim] = useState(false);
@@ -56,7 +56,11 @@ export default function VideoCard({ video, onClick }) {
   const handleAdd = async (e) => {
     e.stopPropagation();
     e.preventDefault();
-    if (!user || added) return;
+    if (!user) {
+      setAuthModalOpen(true);
+      return;
+    }
+    if (added) return;
     try {
       await fetch(`${API_BASE}/user/favorites`, {
         method: 'POST',
@@ -76,10 +80,26 @@ export default function VideoCard({ video, onClick }) {
   const handleLike = (e) => {
     e.stopPropagation();
     e.preventDefault();
+    if (!user) {
+      setAuthModalOpen(true);
+      return;
+    }
     if (liked) return;
     setLiked(true);
     setShowLikeAnim(true);
     setTimeout(() => setShowLikeAnim(false), 1000);
+  };
+
+  const handleCardClick = (e) => {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+    if (!user) {
+      setAuthModalOpen(true);
+      return;
+    }
+    onClick(video);
   };
 
   const preventClick = (e) => {
@@ -94,7 +114,7 @@ export default function VideoCard({ video, onClick }) {
     <div 
       ref={cardRef}
       className={`video-card align-${alignment}`} 
-      onClick={() => onClick(video)} 
+      onClick={handleCardClick} 
       id={`video-${video.video_id}`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -139,7 +159,7 @@ export default function VideoCard({ video, onClick }) {
               <button 
                 className="video-hover-action-btn action-play" 
                 data-tooltip="Play" 
-                onClick={(e) => { preventClick(e); onClick(video); }}
+                onClick={handleCardClick}
               >
                 <Play size={18} fill="black" color="black" />
               </button>
@@ -151,7 +171,7 @@ export default function VideoCard({ video, onClick }) {
                 {showLikeAnim && <div className="floating-like-anim"><Heart size={30} fill="#ff416c" color="#ff416c" /></div>}
               </button>
             </div>
-            <button className="video-hover-action-btn" data-tooltip="More info" onClick={(e) => { preventClick(e); onClick(video); }}>
+            <button className="video-hover-action-btn" data-tooltip="More info" onClick={handleCardClick}>
               <ChevronDown size={18} />
             </button>
           </div>
