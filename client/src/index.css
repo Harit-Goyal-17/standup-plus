@@ -531,6 +531,12 @@ input, select { font-family: inherit; }
   transform: translateX(-50%) scale(1.12) !important;
 }
 
+@media (hover: none) and (pointer: coarse) {
+  .video-hover-card {
+    display: none !important;
+  }
+}
+
 .video-hover-media-wrapper {
   position: relative;
   width: 100%;

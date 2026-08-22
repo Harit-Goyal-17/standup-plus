@@ -33,15 +33,26 @@ export default function SearchPage() {
       setResults([]);
       return;
     }
+    const controller = new AbortController();
     const delay = setTimeout(() => {
       setLoading(true);
-      fetch(`${API_BASE}/search?q=${encodeURIComponent(query)}`)
+      fetch(`${API_BASE}/search?q=${encodeURIComponent(query)}`, { signal: controller.signal })
         .then(res => res.json())
-        .then(data => setResults(data))
-        .catch(console.error)
-        .finally(() => setLoading(false));
-    }, 250);
-    return () => clearTimeout(delay);
+        .then(data => {
+          setResults(Array.isArray(data) ? data : []);
+        })
+        .catch(err => {
+          if (err.name !== 'AbortError') console.error(err);
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) setLoading(false);
+        });
+    }, 200);
+
+    return () => {
+      clearTimeout(delay);
+      controller.abort();
+    };
   }, [query]);
 
   const handleInputChange = (e) => {

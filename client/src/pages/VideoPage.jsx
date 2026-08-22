@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Heart, Star, Plus, Share2, Play, X, RotateCcw, Check, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Heart, Star, Plus, Share2, Play, X, RotateCcw, Check, ChevronDown, AlertCircle } from 'lucide-react';
 import { formatDuration, formatDate, formatViews, getRatingColor, getTagColor, getMaturityInfo, formatTagLabel, API_BASE } from '../utils';
+import { updateSEO } from '../utils/seo';
 import { useAuth } from '../context/AuthContext';
 import VideoCard from '../components/VideoCard';
 import VideoModal from '../components/VideoModal';
@@ -28,6 +29,7 @@ export default function VideoPage() {
   const [comedianVideos, setComedianVideos] = useState([]);
   const [selectedModalVideoId, setSelectedModalVideoId] = useState(null);
   const [autoplayEnabled, setAutoplayEnabled] = useState(true);
+  const [videoRestrictedError, setVideoRestrictedError] = useState(false);
   
   // Autoplay Countdown State
   const [countdown, setCountdown] = useState(null); // null when not counting down
@@ -96,6 +98,11 @@ export default function VideoPage() {
       .then(data => {
         setVideo(data);
         setLoading(false);
+        updateSEO({
+          title: data.title,
+          description: data.synopsis || `Watch ${data.comedian_name || 'Stand-Up'}'s performance on StandUp+`,
+          image: data.thumbnail_url
+        });
 
         if (data.comedian_id) {
           fetch(`${API_BASE}/comedians/${data.comedian_id}`)
@@ -110,10 +117,35 @@ export default function VideoPage() {
             .catch(() => {});
         }
       })
-      .catch(err => {
-        console.error(err);
-        setLoading(false);
-      });
+      .catch(() => {});
+
+    // 2. Fetch User Ratings & Favorites State
+    if (user && token) {
+      fetch(`${API_BASE}/user/ratings`, { headers: authHeaders })
+        .then(res => res.json())
+        .then(ratings => {
+          if (Array.isArray(ratings)) {
+            const userRating = ratings.find(r => r.video_id === videoId);
+            if (userRating) setRating(userRating.rating);
+          }
+        })
+        .catch(() => {});
+
+      fetch(`${API_BASE}/user/favorites`, { headers: authHeaders })
+        .then(res => res.json())
+        .then(favorites => {
+          if (Array.isArray(favorites)) {
+            const favIds = new Set(favorites.map(f => f.video_id));
+            setMyListIds(favIds);
+            setIsLiked(favIds.has(videoId));
+            setIsAddedToList(favIds.has(videoId));
+          } else {
+            setIsLiked(false);
+            setIsAddedToList(false);
+          }
+        })
+        .catch(() => {});
+    }
 
     // Fetch rich recommendations with synopses from /api/videos/:id/related
     fetch(`${API_BASE}/videos/${videoId}/related`)
@@ -138,29 +170,12 @@ export default function VideoPage() {
         }
       })
       .catch(() => {});
-
-    // Check user favorites status & populate myListIds
-    if (user && token) {
-      fetch(`${API_BASE}/user/favorites`, { headers: authHeaders })
-        .then(res => res.json())
-        .then(favorites => {
-          if (Array.isArray(favorites)) {
-            const favIds = new Set(favorites.map(f => f.video_id));
-            setMyListIds(favIds);
-            setIsLiked(favIds.has(videoId));
-            setIsAddedToList(favIds.has(videoId));
-          } else {
-            setIsLiked(false);
-            setIsAddedToList(false);
-          }
-        })
-        .catch(() => {});
-    }
   }, [videoId, user, token, authHeaders]);
 
   // 3. YouTube IFrame API Initialization & Real-Time Sync
   useEffect(() => {
     let isCancelled = false;
+    setVideoRestrictedError(false);
 
     function initYT() {
       if (!window.YT || !window.YT.Player) {
@@ -206,6 +221,7 @@ export default function VideoPage() {
           onStateChange: (event) => {
             // YT.PlayerState: PLAYING=1, PAUSED=2, ENDED=0
             if (event.data === 1) { // Playing
+              setVideoRestrictedError(false);
               startProgressTracker();
             } else if (event.data === 2) { // Paused
               stopProgressTracker();
@@ -215,6 +231,11 @@ export default function VideoPage() {
               reportCurrentProgress(true);
               triggerAutoplayCountdown();
             }
+          },
+          onError: (event) => {
+            console.warn(`YouTube Player restriction/playback error ${event.data} for video ${videoId}`);
+            setVideoRestrictedError(true);
+            triggerAutoplayCountdown(3);
           }
         }
       });
@@ -248,25 +269,26 @@ export default function VideoPage() {
           triggerAutoplayCountdown();
         }
 
-        if (currentTime > 0) {
-          fetch(`${API_BASE}/user/watch-history`, {
-            method: 'POST',
-            headers: authHeaders,
-            body: JSON.stringify({
-              videoId,
-              watchDurationSeconds: currentTime,
-              completed: isCompleted
-            })
-          }).catch(() => {});
-        }
-      } catch (err) {}
+        // Save progress to server
+        fetch(`${API_BASE}/user/watch-history`, {
+          method: 'POST',
+          headers: authHeaders,
+          body: JSON.stringify({
+            videoId,
+            watchDurationSeconds: currentTime,
+            completed: isCompleted
+          })
+        }).catch(() => {});
+      } catch (err) {
+        console.error("Progress tracking error:", err);
+      }
     }
 
     initYT();
 
     return () => {
       isCancelled = true;
-      if (progressPollIntervalRef.current) clearInterval(progressPollIntervalRef.current);
+      stopProgressTracker();
       if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
       if (playerRef.current && typeof playerRef.current.getCurrentTime === 'function') {
         reportCurrentProgress();
@@ -275,7 +297,7 @@ export default function VideoPage() {
   }, [videoId, startSeconds, user, token, authHeaders, video?.duration_seconds]);
 
   // 4. Handle Autoplay Countdown
-  const triggerAutoplayCountdown = () => {
+  const triggerAutoplayCountdown = (initialSeconds = 10) => {
     if (!autoplayEnabled || countdownActiveRef.current) return;
     
     // Resolve target next video reliably across all comics & specials
@@ -290,11 +312,11 @@ export default function VideoPage() {
 
     countdownActiveRef.current = true;
     setNextVideo(targetNext);
-    setCountdown(10);
+    setCountdown(initialSeconds);
 
     if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
 
-    let sec = 10;
+    let sec = initialSeconds;
     countdownTimerRef.current = setInterval(() => {
       sec -= 1;
       if (sec <= 0) {
@@ -478,8 +500,31 @@ export default function VideoPage() {
         <div className="video-page-player">
           <div id="yt-player-target" className="yt-player-embed" />
           
+          {/* YouTube Video Restricted / Playback Error Banner */}
+          {videoRestrictedError && (
+            <div className="autoplay-countdown-overlay" style={{ background: 'rgba(10, 10, 15, 0.94)' }}>
+              <div className="autoplay-card" style={{ maxWidth: 420 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                  <AlertCircle size={22} color="#f59e0b" />
+                  <span className="autoplay-label" style={{ color: '#f59e0b', fontSize: '0.9rem' }}>SET RESTRICTED BY CREATOR</span>
+                </div>
+                <p style={{ color: '#9ca3af', fontSize: '0.88rem', margin: '0 0 16px 0', lineHeight: 1.4 }}>
+                  This video cannot be played in embedded mode. Playing next recommended stand-up set in <strong>{countdown ?? 3}s</strong>...
+                </p>
+                <div className="autoplay-actions">
+                  <button className="netflix-white-play-btn" style={{ padding: '8px 18px', fontSize: '0.88rem' }} onClick={handlePlayNextImmediately}>
+                    <Play size={14} fill="black" /> Play Next Now
+                  </button>
+                  <button className="btn-secondary autoplay-cancel-btn" onClick={() => setVideoRestrictedError(false)}>
+                    Stay
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Netflix-Style Up Next Autoplay Countdown Card */}
-          {countdown !== null && nextVideo && (
+          {countdown !== null && nextVideo && !videoRestrictedError && (
             <div className="autoplay-countdown-overlay">
               <div className="autoplay-card">
                 <button className="autoplay-close-btn" onClick={handleCancelCountdown} title="Cancel autoplay">

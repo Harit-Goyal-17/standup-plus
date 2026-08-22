@@ -40,8 +40,8 @@ export const AuthProvider = ({ children }) => {
               localStorage.setItem('activeProfileId', matched.profile_id);
             }
           });
-        }
-        else {
+        } else if (data.status === 401 || data.status === 403 || data.error === 'Invalid token') {
+          // Explicit unauthorized token from server
           setToken(null);
           setUser(null);
           setActiveProfile(null);
@@ -49,12 +49,9 @@ export const AuthProvider = ({ children }) => {
           localStorage.removeItem('activeProfileId');
         }
       })
-      .catch(() => {
-        setToken(null);
-        setUser(null);
-        setActiveProfile(null);
-        localStorage.removeItem('token');
-        localStorage.removeItem('activeProfileId');
+      .catch((err) => {
+        // Network timeout / cold-start: do not wipe token, maintain local session
+        console.warn("Auth check network notice (server may be waking up):", err);
       })
       .finally(() => setLoading(false));
     } else {

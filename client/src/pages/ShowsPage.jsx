@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Play, Sparkles, Film, Flame, Users, CheckCircle, ChevronRight, X, Clock, Eye, Heart, Layers } from 'lucide-react';
 import { API_BASE, formatViews, formatDuration, formatDate } from '../utils';
+import { updateSEO } from '../utils/seo';
 import { useAuth } from '../context/AuthContext';
 
 export default function ShowsPage() {
@@ -18,6 +19,11 @@ export default function ShowsPage() {
   const [watchHistory, setWatchHistory] = useState([]);
 
   useEffect(() => {
+    updateSEO({
+      title: 'Original Comedy Shows & Roast Series',
+      description: 'Stream all seasons and unedited episodes of India\'s Got Latent, Pretty Good Roast Show, Lie Hard, and more on StandUp+'
+    });
+
     fetch(`${API_BASE}/shows`)
       .then(res => res.json())
       .then(data => {

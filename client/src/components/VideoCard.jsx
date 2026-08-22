@@ -31,7 +31,11 @@ export default function VideoCard({ video, onClick, onRemoveFromRow, isInWatchli
     ? Math.min(100, Math.max(0, (video.watch_duration_seconds / video.duration_seconds) * 100))
     : 0;
 
+  const isTouchDevice = typeof window !== 'undefined' && ('ontouchstart' in window || (navigator && navigator.maxTouchPoints > 0));
+
   const handleMouseEnter = () => {
+    if (isTouchDevice) return;
+
     if (cardRef.current) {
       const rect = cardRef.current.getBoundingClientRect();
       if (rect.left < 160) {
@@ -44,7 +48,7 @@ export default function VideoCard({ video, onClick, onRemoveFromRow, isInWatchli
     }
 
     if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
-    // Start playing video preview after user hovers for 2 seconds
+    // Start playing video preview after user hovers for 2 seconds (desktop only)
     hoverTimerRef.current = setTimeout(() => {
       setIsPlayingPreview(true);
     }, 2000);

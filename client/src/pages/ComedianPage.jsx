@@ -4,6 +4,7 @@ import { Play, Share2, Sparkles, Check, ArrowLeft, Users, Tv, Mic, Flame } from 
 import VideoCard from '../components/VideoCard';
 import VideoCarousel from '../components/VideoCarousel';
 import { API_BASE, formatViews, cleanHandle } from '../utils';
+import { updateSEO } from '../utils/seo';
 
 export default function ComedianPage() {
   const { id } = useParams();
@@ -27,6 +28,13 @@ export default function ComedianPage() {
         setComedian(comedianData);
         setAllComedians(Array.isArray(comediansList) ? comediansList : []);
         setLoading(false);
+        if (comedianData && comedianData.name) {
+          updateSEO({
+            title: `${cleanHandle(comedianData.name)} Stand-Up Specials`,
+            description: `Stream stand-up comedy specials, crowd work sets, and original shows by ${cleanHandle(comedianData.name)} on StandUp+`,
+            image: comedianData.profile_image_url
+          });
+        }
       })
       .catch(err => {
         console.error(err);
