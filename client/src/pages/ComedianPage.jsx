@@ -219,7 +219,7 @@ export default function ComedianPage() {
         {/* Section 1: Most Loved & Popular */}
         {popularVideos.length > 0 && (
           <VideoCarousel 
-            title={`🌟 Most Loved by ${cleanHandle(comedian.name)}`} 
+            title={`Popular by ${cleanHandle(comedian.name)}`} 
             videos={popularVideos} 
             onVideoClick={handleVideoClick} 
           />
@@ -228,7 +228,7 @@ export default function ComedianPage() {
         {/* Section 2: Shows & Hosted Series (e.g. Lie Hard, Pretty Good Roast Show, India's Got Latent) */}
         {showVideos.length > 0 && (
           <VideoCarousel 
-            title={`🎬 Shows & Series Hosted by ${cleanHandle(comedian.name)}`} 
+            title={`Shows & Series`} 
             videos={showVideos} 
             onVideoClick={handleVideoClick} 
           />
@@ -237,7 +237,7 @@ export default function ComedianPage() {
         {/* Section 3: Full Specials & Long Sets (35+ min) */}
         {fullSpecials.length > 0 && (
           <VideoCarousel 
-            title={`👑 Full Specials & Long Sets (${fullSpecials.length})`} 
+            title={`Specials & Long Sets`} 
             videos={fullSpecials} 
             onVideoClick={handleVideoClick} 
           />
@@ -246,7 +246,7 @@ export default function ComedianPage() {
         {/* Section 4: Crowd Work & Live Banter */}
         {crowdWorkVideos.length > 0 && (
           <VideoCarousel 
-            title={`🎤 Crowd Work & Unscripted Banter`} 
+            title={`Crowd Work`} 
             videos={crowdWorkVideos} 
             onVideoClick={handleVideoClick} 
           />
@@ -255,7 +255,7 @@ export default function ComedianPage() {
         {/* Section 5: Stand-Up Bits & Viral Sets */}
         {standupBits.length > 0 && (
           <VideoCarousel 
-            title={`⚡ Stand-Up Comedy Bits & Sketches`} 
+            title={`Stand-Up Bits`} 
             videos={standupBits} 
             onVideoClick={handleVideoClick} 
           />

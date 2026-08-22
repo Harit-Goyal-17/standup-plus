@@ -29,13 +29,13 @@ export default function BrowseComediansPage() {
 
   const categories = [
     { id: 'all', label: 'All Artists' },
-    { id: 'popular', label: '🔥 Most Popular' },
-    { id: 'roast', label: '🎯 Roasts & Crowd Work' },
-    { id: 'observational', label: '☕ Observational' },
-    { id: 'storytelling', label: '📖 Storytellers' },
-    { id: 'clean', label: '✨ Clean & Family' },
-    { id: 'female', label: '👑 Female Stand-Up' },
-    { id: 'global', label: '🌍 Global Stand-Up' }
+    { id: 'popular', label: 'Popular' },
+    { id: 'roast', label: 'Roasts & Crowd Work' },
+    { id: 'observational', label: 'Observational' },
+    { id: 'storytelling', label: 'Storytellers' },
+    { id: 'clean', label: 'Clean & Family' },
+    { id: 'female', label: 'Female Stand-Up' },
+    { id: 'global', label: 'Global Stand-Up' }
   ];
 
   const filteredComedians = useMemo(() => {

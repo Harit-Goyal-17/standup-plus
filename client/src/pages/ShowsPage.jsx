@@ -144,10 +144,11 @@ export default function ShowsPage() {
             <p className="shows-hero-desc">{featuredShow.description}</p>
             <div className="shows-hero-actions">
               <button 
-                className="hero-btn-play"
+                className="netflix-white-play-btn"
+                style={{ padding: '12px 28px', fontSize: '1rem', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
                 onClick={() => handleShowClick(featuredShow)}
               >
-                <Play size={20} fill="#000" /> Browse All {featuredShow.episode_count} Episodes
+                <Play size={20} fill="#000" color="#000" /> Browse All {featuredShow.episode_count} Episodes
               </button>
             </div>
           </div>
@@ -280,11 +281,11 @@ export default function ShowsPage() {
                     
                     {selectedShow.episodes?.length > 0 && (
                       <button 
-                        className="btn-primary" 
-                        style={{ marginTop: 16, padding: '12px 28px', fontSize: '1.05rem', gap: 10 }}
+                        className="netflix-white-play-btn" 
+                        style={{ marginTop: 16, padding: '12px 28px', fontSize: '1.05rem', gap: 10, display: 'inline-flex', alignItems: 'center' }}
                         onClick={() => handlePlayEpisode(selectedShow.episodes[0])}
                       >
-                        <Play size={20} fill="currentColor" /> Play Episode 1
+                        <Play size={20} fill="black" color="black" /> Play Episode 1
                       </button>
                     )}
                   </div>

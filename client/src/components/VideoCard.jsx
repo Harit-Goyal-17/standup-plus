@@ -3,16 +3,25 @@ import { Play, Plus, Heart, ChevronDown, Check, X, Trash2 } from 'lucide-react';
 import { formatDuration, formatViews, getRatingColor, getDotSeparatedTopics, API_BASE } from '../utils';
 import { useAuth } from '../context/AuthContext';
 
-export default function VideoCard({ video, onClick, onRemoveFromRow }) {
+export default function VideoCard({ video, onClick, onRemoveFromRow, isInWatchlist, onRemoveFromWatchlist }) {
   const { user, token, activeProfile, setAuthModalOpen } = useAuth();
-  const [added, setAdded] = useState(false);
+  const [added, setAdded] = useState(
+    Boolean(video?.isInWatchlist || video?.is_favorite || isInWatchlist || (typeof window !== 'undefined' && window.location.pathname.includes('/my-list')))
+  );
   const [liked, setLiked] = useState(false);
   const [showLikeAnim, setShowLikeAnim] = useState(false);
   const [isPlayingPreview, setIsPlayingPreview] = useState(false);
   const [alignment, setAlignment] = useState('center');
   const [showRemoveModal, setShowRemoveModal] = useState(false);
+  const [showRemoveFromListModal, setShowRemoveFromListModal] = useState(false);
   const cardRef = useRef(null);
   const hoverTimerRef = useRef(null);
+
+  useEffect(() => {
+    if (isInWatchlist || video?.isInWatchlist || video?.is_favorite || (typeof window !== 'undefined' && window.location.pathname.includes('/my-list'))) {
+      setAdded(true);
+    }
+  }, [isInWatchlist, video?.isInWatchlist, video?.is_favorite]);
 
   if (!video) return null;
 
@@ -61,7 +70,10 @@ export default function VideoCard({ video, onClick, onRemoveFromRow }) {
       setAuthModalOpen(true);
       return;
     }
-    if (added) return;
+    if (added) {
+      setShowRemoveFromListModal(true);
+      return;
+    }
     try {
       await fetch(`${API_BASE}/user/favorites`, {
         method: 'POST',
@@ -74,6 +86,29 @@ export default function VideoCard({ video, onClick, onRemoveFromRow }) {
       });
       setAdded(true);
     } catch(err) {
+      console.error(err);
+    }
+  };
+
+  const handleConfirmRemoveFromList = async (e) => {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+    setShowRemoveFromListModal(false);
+    try {
+      await fetch(`${API_BASE}/user/favorites/${video.video_id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          ...(activeProfile?.profile_id ? { 'x-profile-id': activeProfile.profile_id } : {})
+        }
+      });
+      setAdded(false);
+      if (onRemoveFromWatchlist) onRemoveFromWatchlist(video.video_id);
+      if (onRemoveFromRow) onRemoveFromRow(video.video_id);
+    } catch (err) {
       console.error(err);
     }
   };
@@ -214,7 +249,11 @@ export default function VideoCard({ video, onClick, onRemoveFromRow }) {
               >
                 <Play size={18} fill="black" color="black" />
               </button>
-              <button className="video-hover-action-btn" data-tooltip="Add to My List" onClick={handleAdd}>
+              <button 
+                className="video-hover-action-btn" 
+                data-tooltip={added ? "In My List" : "Add to My List"} 
+                onClick={handleAdd}
+              >
                 {added ? <Check size={18} color="#4ade80" /> : <Plus size={18} />}
               </button>
               <button className="video-hover-action-btn" data-tooltip="I like this" onClick={handleLike} style={{ position: 'relative' }}>
@@ -264,6 +303,44 @@ export default function VideoCard({ video, onClick, onRemoveFromRow }) {
               </React.Fragment>
             ))}
           </div>
+
+          {/* In-place Netflix Popover for Remove from My List */}
+          {showRemoveFromListModal && (
+            <div 
+              className="card-inplace-popover" 
+              onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
+            >
+              <div className="inplace-popover-header">
+                <span className="inplace-popover-title">Remove from My List?</span>
+                <button 
+                  className="inplace-popover-close" 
+                  onClick={(e) => { e.stopPropagation(); setShowRemoveFromListModal(false); }}
+                >
+                  <X size={14} />
+                </button>
+              </div>
+
+              <div style={{ padding: '12px 14px' }}>
+                <p style={{ fontSize: '0.82rem', color: '#9ca3af', margin: '0 0 12px 0', lineHeight: 1.4 }}>
+                  Remove from your saved list?
+                </p>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button 
+                    className="inplace-popover-confirm-btn"
+                    onClick={handleConfirmRemoveFromList}
+                  >
+                    Remove
+                  </button>
+                  <button 
+                    className="inplace-popover-cancel-btn"
+                    onClick={(e) => { e.stopPropagation(); setShowRemoveFromListModal(false); }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* In-place Netflix Popover for Remove from Row */}
           {showRemoveModal && (

@@ -394,7 +394,7 @@ app.get('/api/categories', asyncHandler(async (req, res) => {
   `);
   if (topSpecials.length > 0) categories.push({ title: 'Top 10 Specials Today', videos: topSpecials, isTop10: true });
 
-  // 3. Crowd Work Masters (Standard Cards)
+  // 3. Crowd Work (Standard Cards)
   const crowdVideos = getCategoryVideos(`
     SELECT DISTINCT v.*, c.name as comedian_name 
     FROM videos v 
@@ -405,9 +405,9 @@ app.get('/api/categories', asyncHandler(async (req, res) => {
     ORDER BY RANDOM()
     LIMIT 10
   `);
-  if (crowdVideos.length > 0) categories.push({ title: 'Crowd Work Masters', videos: crowdVideos });
+  if (crowdVideos.length > 0) categories.push({ title: 'Crowd Work', videos: crowdVideos });
 
-  // 4. Dark & Cynical Comedy (Standard Cards)
+  // 4. Dark Comedy (Standard Cards)
   const darkVideos = getCategoryVideos(`
     SELECT DISTINCT v.*, c.name as comedian_name 
     FROM videos v 
@@ -418,9 +418,9 @@ app.get('/api/categories', asyncHandler(async (req, res) => {
     ORDER BY RANDOM()
     LIMIT 10
   `);
-  if (darkVideos.length > 0) categories.push({ title: 'Dark & Cynical', videos: darkVideos });
+  if (darkVideos.length > 0) categories.push({ title: 'Dark Comedy', videos: darkVideos });
 
-  // 5. Top 10 Standup Bits Today (Top 10 Numbered)
+  // 5. Top 10 Stand-Up Bits (Top 10 Numbered)
   const topBits = getCategoryVideos(`
     SELECT v.*, c.name as comedian_name
     FROM videos v
@@ -430,7 +430,7 @@ app.get('/api/categories', asyncHandler(async (req, res) => {
     ORDER BY v.view_count DESC
     LIMIT 10
   `);
-  if (topBits.length > 0) categories.push({ title: 'Top 10 Standup Bits Today', videos: topBits, isTop10: true });
+  if (topBits.length > 0) categories.push({ title: 'Top 10 Stand-Up Bits', videos: topBits, isTop10: true });
 
   // 6. Family & Wholesome (Standard Cards)
   const familyVideos = getCategoryVideos(`
@@ -475,9 +475,9 @@ app.get('/api/categories', asyncHandler(async (req, res) => {
     ORDER BY v.view_count DESC
     LIMIT 10
   `);
-  if (topRoasts.length > 0) categories.push({ title: 'Top 10 Roasts Today', videos: topRoasts, isTop10: true });
+  if (topRoasts.length > 0) categories.push({ title: 'Top 10 Roasts', videos: topRoasts, isTop10: true });
 
-  // 9. Relationship Comedy (Standard Cards)
+  // 9. Relationships (Standard Cards)
   const relationshipVideos = getCategoryVideos(`
     SELECT DISTINCT v.*, c.name as comedian_name 
     FROM videos v 
@@ -488,9 +488,9 @@ app.get('/api/categories', asyncHandler(async (req, res) => {
     ORDER BY RANDOM()
     LIMIT 10
   `);
-  if (relationshipVideos.length > 0) categories.push({ title: 'Relationship Comedy', videos: relationshipVideos });
+  if (relationshipVideos.length > 0) categories.push({ title: 'Relationships', videos: relationshipVideos });
 
-  // 10. Corporate Life (Standard Cards)
+  // 10. Workplace & Corporate (Standard Cards)
   const corporateVideos = getCategoryVideos(`
     SELECT DISTINCT v.*, c.name as comedian_name 
     FROM videos v 
@@ -501,7 +501,7 @@ app.get('/api/categories', asyncHandler(async (req, res) => {
     ORDER BY RANDOM()
     LIMIT 10
   `);
-  if (corporateVideos.length > 0) categories.push({ title: 'Corporate Life', videos: corporateVideos });
+  if (corporateVideos.length > 0) categories.push({ title: 'Workplace & Corporate', videos: corporateVideos });
 
   // 11. Comedy Series (Top 10 Numbered)
   const topEpisodes = getCategoryVideos(`
@@ -512,7 +512,7 @@ app.get('/api/categories', asyncHandler(async (req, res) => {
     ORDER BY v.view_count DESC
     LIMIT 10
   `);
-  if (topEpisodes.length > 0) categories.push({ title: 'Top Comedy Series', videos: topEpisodes, isTop10: true });
+  if (topEpisodes.length > 0) categories.push({ title: 'Comedy Series', videos: topEpisodes, isTop10: true });
 
   // 12. Recently Added (Standard Cards)
   const newVideos = getCategoryVideos(`
@@ -523,9 +523,9 @@ app.get('/api/categories', asyncHandler(async (req, res) => {
     ORDER BY v.published_at DESC
     LIMIT 10
   `);
-  if (newVideos.length > 0) categories.push({ title: '✨ Recently Added', videos: newVideos, isRecentlyAdded: true });
+  if (newVideos.length > 0) categories.push({ title: 'Recently Added', videos: newVideos, isRecentlyAdded: true });
 
-  // 13. International & Global Stand-Up (Global Touring Artists)
+  // 13. Global Stand-Up (Global Touring Artists)
   const internationalVideos = getCategoryVideos(`
     SELECT DISTINCT v.*, c.name as comedian_name 
     FROM videos v 
@@ -541,7 +541,7 @@ app.get('/api/categories', asyncHandler(async (req, res) => {
     ORDER BY v.view_count DESC
     LIMIT 10
   `);
-  if (internationalVideos.length > 0) categories.push({ title: '🌍 International & Global Stand-Up', videos: internationalVideos });
+  if (internationalVideos.length > 0) categories.push({ title: 'Global Stand-Up', videos: internationalVideos });
 
   res.json(categories);
 }));

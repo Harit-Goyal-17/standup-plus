@@ -1801,6 +1801,39 @@ input, select { font-family: inherit; }
   justify-content: center;
 }
 
+.inplace-popover-confirm-btn {
+  flex: 1;
+  background: #e50914;
+  color: #ffffff;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.inplace-popover-confirm-btn:hover {
+  background: #b80710;
+}
+
+.inplace-popover-cancel-btn {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.1);
+  color: #d1d5db;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 8px 14px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.inplace-popover-cancel-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
 .video-hover-actions [data-tooltip="More info"]:hover::after,
 .video-hover-actions [data-tooltip="Remove from row"]:hover::after {
   left: auto !important;
