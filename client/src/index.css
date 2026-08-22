@@ -659,11 +659,28 @@ input, select { font-family: inherit; }
 /* Keep these for tags elsewhere */
 .video-title { font-family: var(--font-display); font-size: 1.1rem; font-weight: 600; margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .video-meta { font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px; }
-.tag-pills { display: flex; flex-wrap: wrap; gap: 4px; }
-.tag-pill { font-size: 0.7rem; padding: 2px 6px; border-radius: 12px; font-weight: 500; }
-.tag-style { background: rgba(59, 130, 246, 0.2); color: var(--tag-style); border: 1px solid rgba(59, 130, 246, 0.3); }
-.tag-tone { background: rgba(139, 92, 246, 0.2); color: var(--tag-tone); border: 1px solid rgba(139, 92, 246, 0.3); }
-.tag-theme { background: rgba(16, 185, 129, 0.2); color: var(--tag-theme); border: 1px solid rgba(16, 185, 129, 0.3); }
+.tag-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag-pill { 
+  font-size: 0.78rem; 
+  padding: 4px 10px; 
+  border-radius: 6px; 
+  font-weight: 500; 
+  background: rgba(255, 255, 255, 0.08); 
+  border: 1px solid rgba(255, 255, 255, 0.16); 
+  color: #e5e7eb; 
+  letter-spacing: 0.2px; 
+  transition: all 0.2s ease;
+}
+.tag-pill:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+}
+.tag-style, .tag-tone, .tag-theme { 
+  background: rgba(255, 255, 255, 0.08); 
+  color: #e5e7eb; 
+  border: 1px solid rgba(255, 255, 255, 0.16); 
+}
 
 .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); z-index: 1000; display: flex; align-items: center; justify-content: center; animation: fadeIn 0.3s ease; }
 .auth-modal { background: var(--bg-card); border: 1px solid var(--bg-glass); padding: 32px; border-radius: 12px; width: 100%; max-width: 400px; animation: scaleIn 0.3s ease; position: relative; }

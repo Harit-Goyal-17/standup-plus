@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import VideoCard from '../components/VideoCard';
-import { API_BASE } from '../utils';
+import { API_BASE, formatTagLabel } from '../utils';
 
 export default function BrowsePage({ defaultSort = 'view_count' }) {
   const [tags, setTags] = useState({ style: [], tone: [], theme: [] });
@@ -72,19 +72,19 @@ export default function BrowsePage({ defaultSort = 'view_count' }) {
         </div>
 
         <div className="filter-group">
-          <div className="filter-group-title">Style</div>
+          <div className="filter-group-title">Style & Delivery</div>
           {tags.style.map(t => (
             <label key={t} className="filter-label">
-              <input type="checkbox" checked={filters.style.includes(t)} onChange={() => handleCheckbox('style', t)} /> {t}
+              <input type="checkbox" checked={filters.style.includes(t)} onChange={() => handleCheckbox('style', t)} /> {formatTagLabel(t)}
             </label>
           ))}
         </div>
         
         <div className="filter-group">
-          <div className="filter-group-title">Tone</div>
+          <div className="filter-group-title">Humor Tone</div>
           {tags.tone.map(t => (
             <label key={t} className="filter-label">
-              <input type="checkbox" checked={filters.tone.includes(t)} onChange={() => handleCheckbox('tone', t)} /> {t}
+              <input type="checkbox" checked={filters.tone.includes(t)} onChange={() => handleCheckbox('tone', t)} /> {formatTagLabel(t)}
             </label>
           ))}
         </div>

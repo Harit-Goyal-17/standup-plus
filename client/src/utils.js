@@ -38,6 +38,36 @@ export function getTagColor(tagType) {
   return map[tagType] || 'tag-style';
 }
 
+export function formatTagLabel(tag) {
+  if (!tag) return '';
+  const map = {
+    'observational-comedy': 'Observational',
+    'crowd-work-heavy': 'Crowd Work & Banter',
+    'anecdotal-storytelling': 'Stories & Experiences',
+    'deadpan-delivery': 'Deadpan Humor',
+    'rapid-fire-one-liners': 'Quick One-Liners',
+    'musical-standup': 'Musical Comedy',
+    'physical-and-energetic': 'High Energy & Physical',
+    'dark-and-cynical': 'Dark Comedy',
+    'sarcastic-and-biting': 'Sarcastic & Witty',
+    'nostalgic-and-warm': 'Nostalgia & School Days',
+    'wholesome-and-lighthearted': 'Clean & Wholesome',
+    'absurdist-and-surreal': 'Absurd & Goofy',
+    'self-deprecating-humor': 'Self-Deprecating',
+    'raunchy-and-explicit': 'Uncensored (18+)',
+    'family-and-upbringing': 'Family & Parents',
+    'romantic-relationships': 'Dating & Marriage',
+    'corporate-and-work-life': 'Office & Corporate Jobs',
+    'cultural-commentary': 'Cities & Culture',
+    'political-satire': 'Satire & Society',
+    'everyday-absurdities': 'Everyday Life',
+    'travel-and-experiences': 'Travel & Trips',
+    'mental-health-and-struggles': 'Life Struggles'
+  };
+  if (map[tag]) return map[tag];
+  return tag.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
 export function cleanHandle(handle) {
   if (!handle) return '';
   let name = handle.replace(/^[@\s]+/, '').replace(/standup|comedy|official|unofficial|vlogs|tv|live|_/gi, ' ').trim();
@@ -148,28 +178,28 @@ export function getMaturityInfo(rating) {
   const r = (rating || 'U/A').toUpperCase();
   if (r.includes('18')) {
     return {
-      badge: 'A',
-      advisories: 'crude humor, coarse language, mature themes, adult references',
-      warning: 'Content restricted to adults (18+)'
+      badge: '18+',
+      advisories: 'strong language, mature roast humor, adult themes',
+      warning: 'Content recommended for viewers 18 and older'
     };
   }
   if (r.includes('16')) {
     return {
-      badge: 'U/A 16+',
-      advisories: 'coarse language, mature humor, contemporary themes',
+      badge: '16+',
+      advisories: 'mature humor, coarse language, edgy observational sets',
       warning: 'Suitable for viewers 16 years and older'
     };
   }
   if (r.includes('13')) {
     return {
-      badge: 'U/A 13+',
-      advisories: 'moderate language, suggestive humor, mild crude humor',
+      badge: '13+',
+      advisories: 'moderate language, youth & college humor',
       warning: 'Parental guidance suggested for viewers under 13'
     };
   }
   return {
     badge: 'U/A',
-    advisories: 'family-friendly humor, clean comedy, everyday situations',
+    advisories: 'family-friendly comedy, clean observational humor, everyday relatable sets',
     warning: 'Suitable for all audiences'
   };
 }

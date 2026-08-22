@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Heart, Star, Plus, Share2, Play, X, RotateCcw, Check } from 'lucide-react';
-import { formatDuration, formatDate, formatViews, getRatingColor, getTagColor, API_BASE } from '../utils';
+import { formatDuration, formatDate, formatViews, getRatingColor, getTagColor, getMaturityInfo, formatTagLabel, API_BASE } from '../utils';
 import { useAuth } from '../context/AuthContext';
 import VideoCard from '../components/VideoCard';
 import VideoModal from '../components/VideoModal';
@@ -35,6 +35,7 @@ export default function VideoPage() {
   const playerRef = useRef(null);
   const progressPollIntervalRef = useRef(null);
   const countdownTimerRef = useRef(null);
+  const countdownActiveRef = useRef(false);
 
   const authHeaders = useMemo(() => ({
     'Content-Type': 'application/json',
@@ -189,7 +190,6 @@ export default function VideoPage() {
             // YT.PlayerState: PLAYING=1, PAUSED=2, ENDED=0
             if (event.data === 1) { // Playing
               startProgressTracker();
-              setCountdown(null);
             } else if (event.data === 2) { // Paused
               stopProgressTracker();
               reportCurrentProgress();
@@ -226,8 +226,8 @@ export default function VideoPage() {
         const totalDuration = video?.duration_seconds || Math.floor(playerRef.current.getDuration() || 0);
         const isCompleted = completed || (totalDuration > 0 && currentTime / totalDuration >= 0.9);
 
-        // Near end of video -> Trigger autoplay countdown
-        if (totalDuration > 10 && currentTime >= totalDuration - 6 && !countdown) {
+        // Near end of video -> Trigger autoplay countdown once
+        if (totalDuration > 10 && currentTime >= totalDuration - 6 && !countdownActiveRef.current) {
           triggerAutoplayCountdown();
         }
 
@@ -255,14 +255,15 @@ export default function VideoPage() {
         reportCurrentProgress();
       }
     };
-  }, [videoId, startSeconds, user, token, authHeaders, video?.duration_seconds, countdown]);
+  }, [videoId, startSeconds, user, token, authHeaders, video?.duration_seconds]);
 
   // 4. Handle Autoplay Countdown
   const triggerAutoplayCountdown = () => {
-    if (!autoplayEnabled) return;
+    if (!autoplayEnabled || countdownActiveRef.current) return;
     const targetNext = nextVideo || (comedianVideos.length > 0 ? comedianVideos[0] : moreLikeThis[0]);
     if (!targetNext || targetNext.video_id === videoId) return;
 
+    countdownActiveRef.current = true;
     setNextVideo(targetNext);
     setCountdown(5);
 
@@ -273,6 +274,7 @@ export default function VideoPage() {
       sec -= 1;
       if (sec <= 0) {
         clearInterval(countdownTimerRef.current);
+        countdownActiveRef.current = false;
         navigate(`/watch/${targetNext.video_id}`);
       } else {
         setCountdown(sec);
@@ -282,11 +284,13 @@ export default function VideoPage() {
 
   const handleCancelCountdown = () => {
     if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
+    countdownActiveRef.current = false;
     setCountdown(null);
   };
 
   const handlePlayNextImmediately = () => {
     if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
+    countdownActiveRef.current = false;
     if (nextVideo) {
       navigate(`/watch/${nextVideo.video_id}`);
     }
@@ -538,7 +542,7 @@ export default function VideoPage() {
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                 {video.tags.map((t, idx) => (
                   <span key={idx} className={`tag-pill ${getTagColor(t.tag_type)}`}>
-                    {t.tag_name.replace(/-/g, ' ')}
+                    {formatTagLabel(t.tag_name)}
                   </span>
                 ))}
               </div>
@@ -612,12 +616,10 @@ export default function VideoPage() {
             <span className="netflix-about-label">Maturity Rating:</span>
             <div className="netflix-about-maturity-wrap">
               <span className="netflix-about-maturity-badge">
-                {video.suggested_rating || 'U/A 16+'}
+                {getMaturityInfo(video.suggested_rating).badge}
               </span>
               <span className="netflix-about-maturity-desc">
-                {video.suggested_rating === 'A' || video.suggested_rating === '18+'
-                  ? 'sex, substances, coarse language • Content restricted to adults'
-                  : 'mild language, crude humor • Suitable with parental guidance'}
+                {getMaturityInfo(video.suggested_rating).advisories} • {getMaturityInfo(video.suggested_rating).warning}
               </span>
             </div>
           </div>
