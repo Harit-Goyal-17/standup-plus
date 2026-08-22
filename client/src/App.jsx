@@ -7,6 +7,7 @@ import AuthModal from './components/AuthModal';
 import ProfileSelector from './components/ProfileSelector';
 import HomePage from './pages/HomePage';
 import BrowsePage from './pages/BrowsePage';
+import BrowseComediansPage from './pages/BrowseComediansPage';
 import ShowsPage from './pages/ShowsPage';
 import NewPopularPage from './pages/NewPopularPage';
 import SearchPage from './pages/SearchPage';
@@ -35,7 +36,9 @@ function AppContent() {
       <main className={isWatchPage ? "watch-main-content" : "main-content"}>
         <Routes>
           <Route path="/" element={<HomePage />} />
-          <Route path="/browse" element={<BrowsePage key="browse" />} />
+          <Route path="/browse" element={<BrowseComediansPage />} />
+          <Route path="/comedians" element={<BrowseComediansPage />} />
+          <Route path="/filter" element={<BrowsePage key="filter" />} />
           <Route path="/shows" element={<ShowsPage />} />
           <Route path="/shows/:showId" element={<ShowsPage />} />
           <Route path="/new-popular" element={<NewPopularPage />} />
