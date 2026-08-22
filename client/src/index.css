@@ -98,26 +98,26 @@ input, select { font-family: inherit; }
 }
 .nav-brand-text, .nav-logo-text {
   font-family: var(--font-display); 
-  font-size: 1.55rem; 
-  font-weight: 900; 
+  font-size: 1.45rem; 
+  font-weight: 700; 
   color: #ffffff;
-  letter-spacing: -0.5px;
+  letter-spacing: -0.3px;
 }
 .nav-center-links { 
   display: flex; 
   justify-content: center; 
   align-items: center; 
-  gap: 14px; 
-  margin-left: 50px;
+  gap: 10px; 
+  margin-left: 40px;
 }
-.nav-links { display: flex; gap: 14px; align-items: center; }
+.nav-links { display: flex; gap: 10px; align-items: center; }
 .nav-link { 
   color: #e5e5e5; 
   transition: all 0.2s ease; 
-  font-size: 1.05rem;
-  font-weight: 600; 
-  padding: 8px 18px;
-  border-radius: 20px;
+  font-size: 0.92rem;
+  font-weight: 500; 
+  padding: 6px 14px;
+  border-radius: 18px;
   display: inline-flex;
   align-items: center;
   text-decoration: none;
@@ -127,27 +127,31 @@ input, select { font-family: inherit; }
 }
 .nav-link:hover { 
   color: #ffffff; 
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.1);
 }
 .nav-link.active { 
   color: #ffffff; 
-  background: rgba(255, 255, 255, 0.22);
-  font-weight: 700;
+  background: rgba(255, 255, 255, 0.18);
+  font-weight: 500;
 }
 .nav-dropdown-btn {
   background: transparent;
   border: none;
   font-family: inherit;
   color: #e5e5e5;
+  font-size: 0.92rem;
+  font-weight: 500;
+  padding: 6px 14px;
+  border-radius: 18px;
 }
 .nav-dropdown-btn:hover {
   color: #ffffff;
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.1);
 }
 .nav-dropdown-btn.active {
   color: #ffffff;
-  background: rgba(255, 255, 255, 0.22);
-  font-weight: 700;
+  background: rgba(255, 255, 255, 0.18);
+  font-weight: 500;
 }
 
 /* Integrated Expanding Navbar Search (Netflix style) */
@@ -693,8 +697,8 @@ input, select { font-family: inherit; }
 
 .carousel-container { padding: 12px 4%; margin-bottom: 44px; position: relative; }
 .carousel-container:hover { z-index: 200; }
-.carousel-title { font-family: var(--font-display); font-size: 1.45rem; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; color: #ffffff; }
-@media (max-width: 768px) { .carousel-title { font-size: 1.3rem; } }
+.carousel-title { font-family: var(--font-sans); font-size: 1.32rem; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; color: #ffffff; letter-spacing: -0.2px; }
+@media (max-width: 768px) { .carousel-title { font-size: 1.18rem; } }
 
 .carousel-view-window {
   width: 100%;
