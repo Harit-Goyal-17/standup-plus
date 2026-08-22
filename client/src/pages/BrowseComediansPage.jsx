@@ -34,7 +34,8 @@ export default function BrowseComediansPage() {
     { id: 'observational', label: '☕ Observational' },
     { id: 'storytelling', label: '📖 Storytellers' },
     { id: 'clean', label: '✨ Clean & Family' },
-    { id: 'female', label: '👑 Female Stand-Up' }
+    { id: 'female', label: '👑 Female Stand-Up' },
+    { id: 'global', label: '🌍 Global Stand-Up' }
   ];
 
   const filteredComedians = useMemo(() => {
@@ -56,8 +57,11 @@ export default function BrowseComediansPage() {
       const cleanComics = ['Aashish Solanki', 'Aakash Gupta', 'Amit Tandon', 'Jaspreet Singh', 'Rahul Dua', 'Appurv Gupta', 'Gaurav Gupta'];
       list = list.filter(c => cleanComics.some(name => c.name.toLowerCase().includes(name.toLowerCase())));
     } else if (selectedCategory === 'female') {
-      const femaleComics = ['Prashasti Singh', 'Swati Sachdeva', 'Gurleen Pannu', 'Urooj Ashfaq', 'Shreeja Chaturvedi', 'Sumukhi Suresh', 'Kaneez Surka', 'Aishwarya Mohanraj', 'Sejal Bhat', 'Pavitra Shetty'];
+      const femaleComics = ['Prashasti Singh', 'Swati Sachdeva', 'Gurleen Pannu', 'Urooj Ashfaq', 'Shreeja Chaturvedi', 'Sumukhi Suresh', 'Kaneez Surka', 'Aishwarya Mohanraj', 'Sejal Bhat', 'Pavitra Shetty', 'Taylor Tomlinson'];
       list = list.filter(c => femaleComics.some(name => c.name.toLowerCase().includes(name.toLowerCase())));
+    } else if (selectedCategory === 'global') {
+      const globalComics = ['Taylor Tomlinson', 'Trevor Noah', 'Hasan Minhaj', 'Russell Peters', 'Max Amini', 'Trevor Wallace', 'Gianmarco', 'Pete Holmes', 'Akaash Singh'];
+      list = list.filter(c => globalComics.some(name => c.name.toLowerCase().includes(name.toLowerCase())));
     }
 
     // Search query filter
@@ -88,14 +92,14 @@ export default function BrowseComediansPage() {
       <div className="comedians-hub-header">
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-            <Mic size={20} color="#e50914" />
-            <span style={{ color: '#e50914', fontSize: '0.85rem', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase' }}>
+            <Mic size={18} color="#e50914" />
+            <span style={{ color: '#e50914', fontSize: '0.82rem', fontWeight: 600, letterSpacing: '1px', textTransform: 'uppercase' }}>
               Artist Directory
             </span>
           </div>
-          <h1 className="comedians-hub-title">Browse Indian Stand-Up Comedians</h1>
+          <h1 className="comedians-hub-title">Browse Stand-Up Comedians</h1>
           <p className="comedians-hub-subtitle">
-            Explore {comedians.length} verified stand-up artists, their full-length specials, comedy series, crowd work, and viral bits.
+            Explore verified stand-up artists, their full-length specials, comedy series, crowd work, and viral bits.
           </p>
         </div>
 
@@ -160,7 +164,14 @@ export default function BrowseComediansPage() {
 
               <div className="comedian-card-details">
                 <h3 className="comedian-card-name">{cleanHandle(c.name)}</h3>
-                <span className="comedian-card-badge">Verified Artist</span>
+                
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginBottom: 8 }}>
+                  <span className="comedian-card-badge">Verified Artist</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
+                    <circle cx="12" cy="12" r="10" fill="#1d9bf0"/>
+                    <path d="M8.5 12.5L10.5 14.5L15.5 9.5" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
                 
                 <div className="comedian-card-stats">
                   <span>{c.video_count || 1} {(c.video_count || 1) === 1 ? 'Special' : 'Specials'}</span>

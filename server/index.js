@@ -525,6 +525,24 @@ app.get('/api/categories', asyncHandler(async (req, res) => {
   `);
   if (newVideos.length > 0) categories.push({ title: '✨ Recently Added', videos: newVideos, isRecentlyAdded: true });
 
+  // 13. International & Global Stand-Up (Global Touring Artists)
+  const internationalVideos = getCategoryVideos(`
+    SELECT DISTINCT v.*, c.name as comedian_name 
+    FROM videos v 
+    JOIN comedians c ON v.comedian_id = c.comedian_id
+    WHERE c.name LIKE '%Taylor Tomlinson%' 
+       OR c.name LIKE '%Trevor Noah%' 
+       OR c.name LIKE '%Hasan Minhaj%' 
+       OR c.name LIKE '%Russell Peters%' 
+       OR c.name LIKE '%Max Amini%'
+       OR c.name LIKE '%Trevor Wallace%'
+       OR c.name LIKE '%Gianmarco%'
+       OR c.name LIKE '%Pete Holmes%'
+    ORDER BY v.view_count DESC
+    LIMIT 10
+  `);
+  if (internationalVideos.length > 0) categories.push({ title: '🌍 International & Global Stand-Up', videos: internationalVideos });
+
   res.json(categories);
 }));
 
