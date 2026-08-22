@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Heart, Star, Plus, Share2, Play, X, RotateCcw, Check } from 'lucide-react';
+import { ArrowLeft, Heart, Star, Plus, Share2, Play, X, RotateCcw, Check, ChevronDown } from 'lucide-react';
 import { formatDuration, formatDate, formatViews, getRatingColor, getTagColor, getMaturityInfo, formatTagLabel, API_BASE } from '../utils';
 import { useAuth } from '../context/AuthContext';
 import VideoCard from '../components/VideoCard';
@@ -22,6 +22,7 @@ export default function VideoPage() {
   const [isAddedToList, setIsAddedToList] = useState(false);
   const [showRatingSuccess, setShowRatingSuccess] = useState(false);
   const [moreLikeThis, setMoreLikeThis] = useState([]);
+  const [expandedMoreLikeThis, setExpandedMoreLikeThis] = useState(false);
   const [showLikeAnim, setShowLikeAnim] = useState(false);
   const [comedianVideos, setComedianVideos] = useState([]);
   const [selectedModalVideoId, setSelectedModalVideoId] = useState(null);
@@ -44,11 +45,11 @@ export default function VideoPage() {
   }), [token, activeProfile?.profile_id]);
 
   const ratingVocab = {
-    1: "Tough Crowd 🍅",
-    2: "Mild Chuckles 😐",
-    3: "Solid Laughs 🙂",
-    4: "Hilarious 😂",
-    5: "Absolute Masterclass 👑"
+    1: "Not for me 😐",
+    2: "Mild chuckles 🙂",
+    3: "Good set 😄",
+    4: "Absolutely hilarious! 🤣",
+    5: "Masterpiece Special! 👑"
   };
 
   // Require sign-in to watch any video
@@ -80,13 +81,15 @@ export default function VideoPage() {
     }
   }, [videoId, user, token, authHeaders, initialStartTime]);
 
-  // 2. Fetch Video Details & Suggestions
+  // 2. Fetch Video Details, Comedian Catalog & Rich Recommendations
   useEffect(() => {
     if (!videoId) return;
     setLoading(true);
     setCountdown(null);
+    countdownActiveRef.current = false;
     window.scrollTo(0, 0);
 
+    // Fetch video details
     fetch(`${API_BASE}/videos/${videoId}`)
       .then(res => res.json())
       .then(data => {
@@ -102,9 +105,6 @@ export default function VideoPage() {
                 .sort((a, b) => b.view_count - a.view_count)
                 .slice(0, 12);
               setComedianVideos(others);
-              if (others.length > 0) {
-                setNextVideo(others[0]);
-              }
             })
             .catch(() => {});
         }
@@ -114,17 +114,31 @@ export default function VideoPage() {
         setLoading(false);
       });
 
-    fetch(`${API_BASE}/videos/featured`)
+    // Fetch rich recommendations with synopses from /api/videos/:id/related
+    fetch(`${API_BASE}/videos/${videoId}/related`)
       .then(res => res.json())
       .then(data => {
-        const others = data.filter(v => v.video_id !== videoId).slice(0, 12);
-        setMoreLikeThis(others);
-        if (!nextVideo && others.length > 0) {
-          setNextVideo(others[0]);
+        if (Array.isArray(data) && data.length > 0) {
+          const valid = data.filter(v => v.video_id !== videoId);
+          setMoreLikeThis(valid);
+          if (valid.length > 0) {
+            setNextVideo(valid[0]);
+          }
+        } else {
+          // Fallback to featured
+          fetch(`${API_BASE}/videos/featured`)
+            .then(res => res.json())
+            .then(featured => {
+              const fallback = (featured || []).filter(v => v.video_id !== videoId);
+              setMoreLikeThis(fallback);
+              if (fallback.length > 0) setNextVideo(fallback[0]);
+            })
+            .catch(() => {});
         }
       })
       .catch(() => {});
 
+    // Check user favorites status
     if (user && token) {
       fetch(`${API_BASE}/user/favorites`, { headers: authHeaders })
         .then(res => res.json())
@@ -227,7 +241,7 @@ export default function VideoPage() {
         const isCompleted = completed || (totalDuration > 0 && currentTime / totalDuration >= 0.9);
 
         // Near end of video -> Trigger autoplay countdown once
-        if (totalDuration > 10 && currentTime >= totalDuration - 6 && !countdownActiveRef.current) {
+        if (totalDuration > 10 && currentTime >= totalDuration - 4 && !countdownActiveRef.current) {
           triggerAutoplayCountdown();
         }
 
@@ -260,8 +274,12 @@ export default function VideoPage() {
   // 4. Handle Autoplay Countdown
   const triggerAutoplayCountdown = () => {
     if (!autoplayEnabled || countdownActiveRef.current) return;
-    const targetNext = nextVideo || (comedianVideos.length > 0 ? comedianVideos[0] : moreLikeThis[0]);
-    if (!targetNext || targetNext.video_id === videoId) return;
+    
+    // Resolve target next video reliably
+    const candidates = [...moreLikeThis, ...comedianVideos].filter(v => v && v.video_id !== videoId);
+    const targetNext = nextVideo && nextVideo.video_id !== videoId ? nextVideo : (candidates.length > 0 ? candidates[0] : null);
+    
+    if (!targetNext) return;
 
     countdownActiveRef.current = true;
     setNextVideo(targetNext);
@@ -323,31 +341,40 @@ export default function VideoPage() {
   const handleAddToList = async () => {
     if (!user) { setAuthModalOpen(true); return; }
     try {
-      setIsAddedToList(true);
-      await fetch(`${API_BASE}/user/favorites`, {
-        method: 'POST',
-        headers: authHeaders,
-        body: JSON.stringify({ videoId })
-      });
-    } catch {}
+      const newState = !isAddedToList;
+      setIsAddedToList(newState);
+      if (newState) {
+        await fetch(`${API_BASE}/user/favorites`, {
+          method: 'POST',
+          headers: authHeaders,
+          body: JSON.stringify({ videoId })
+        });
+      } else {
+        await fetch(`${API_BASE}/user/favorites/${videoId}`, {
+          method: 'DELETE',
+          headers: authHeaders
+        });
+      }
+    } catch {
+      setIsAddedToList(!isAddedToList);
+    }
   };
 
-  const handleRate = (val) => {
+  // Instant Creative Star Rating
+  const handleRate = async (val) => {
     if (!user) { setAuthModalOpen(true); return; }
     setRating(val);
-  };
+    setShowRatingSuccess(true);
 
-  const handleSubmitRating = async () => {
-    if (!user || rating === 0) return;
     try {
       await fetch(`${API_BASE}/user/ratings`, {
         method: 'POST',
         headers: authHeaders,
-        body: JSON.stringify({ videoId, rating })
+        body: JSON.stringify({ videoId, rating: val })
       });
-      setShowRatingSuccess(true);
-      setTimeout(() => setShowRatingSuccess(false), 3000);
-    } catch {}
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handleShare = async () => {
@@ -357,8 +384,10 @@ export default function VideoPage() {
   };
 
   const genreLabels = video?.tags?.map(t =>
-    t.tag_name.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+    formatTagLabel(t.tag_name)
   ) || [];
+
+  const visibleMoreLikeThis = expandedMoreLikeThis ? moreLikeThis : moreLikeThis.slice(0, 9);
 
   if (loading) {
     return (
@@ -396,7 +425,7 @@ export default function VideoPage() {
         <div className="video-page-player">
           <div id="yt-player-target" className="yt-player-embed" />
           
-          {/* Netflix-Style Up Next Autoplay Countdown Banner */}
+          {/* Netflix-Style Up Next Autoplay Countdown Card */}
           {countdown !== null && nextVideo && (
             <div className="autoplay-countdown-overlay">
               <div className="autoplay-card">
@@ -460,14 +489,16 @@ export default function VideoPage() {
             >
               <Share2 size={20} />
             </button>
+
+            {/* Sleek Netflix-style Autoplay Toggle Switch */}
             <button 
-              className={`video-page-action-btn ${autoplayEnabled ? 'active-autoplay' : ''}`}
-              data-tooltip={autoplayEnabled ? "Autoplay Next: ON" : "Autoplay Next: OFF"}
+              className={`autoplay-toggle-pill ${autoplayEnabled ? 'is-active' : ''}`}
               onClick={() => setAutoplayEnabled(!autoplayEnabled)}
-              style={{ marginLeft: 'auto', fontSize: '0.82rem', padding: '6px 12px', width: 'auto', borderRadius: 20 }}
+              title={autoplayEnabled ? "Autoplay Next: Enabled" : "Autoplay Next: Disabled"}
             >
-              <RotateCcw size={14} style={{ marginRight: 4 }} />
-              Autoplay {autoplayEnabled ? 'ON' : 'OFF'}
+              <RotateCcw size={14} className="autoplay-toggle-icon" />
+              <span>Autoplay Next</span>
+              <span className={`autoplay-switch-dot ${autoplayEnabled ? 'on' : 'off'}`} />
             </button>
           </div>
 
@@ -508,25 +539,26 @@ export default function VideoPage() {
                     color: star <= (hoverRating || rating) ? '#f59e0b' : '#555',
                     transition: 'all 0.2s',
                     transform: star <= hoverRating ? 'scale(1.2)' : 'scale(1)',
-                    padding: '4px'
+                    padding: '4px',
+                    cursor: 'pointer'
                   }}
+                  title={ratingVocab[star]}
                 >
                   <Star size={22} fill={star <= (hoverRating || rating) ? '#f59e0b' : 'none'} />
                 </button>
               ))}
             </div>
+
             {(hoverRating > 0 || rating > 0) && (
-              <span style={{ fontSize: '0.95rem', fontWeight: 600, color: 'white' }}>
+              <span style={{ fontSize: '0.92rem', fontWeight: 600, color: '#f3f4f6' }}>
                 {ratingVocab[hoverRating || rating]}
               </span>
             )}
-            {rating > 0 && !showRatingSuccess && (
-              <button className="btn-primary" onClick={handleSubmitRating} style={{ padding: '6px 14px', fontSize: '0.85rem' }}>
-                Submit
-              </button>
-            )}
+
             {showRatingSuccess && (
-              <span style={{ color: '#10b981', fontWeight: 600 }}>Thanks for rating! 🎉</span>
+              <span className="rating-saved-badge">
+                <Check size={14} /> Rated & Saved
+              </span>
             )}
           </div>
         </div>
@@ -563,19 +595,95 @@ export default function VideoPage() {
         </div>
       )}
 
-      {/* More like this section */}
+      {/* Netflix-Style "More Like This" Grid (Matching User Screenshot) */}
       {moreLikeThis.length > 0 && (
         <div className="video-page-section">
-          <h2 className="video-page-section-title">More Like This</h2>
-          <div className="video-grid more-videos-grid">
-            {moreLikeThis.map(v => (
-              <VideoCard key={v.video_id} video={v} onClick={() => navigate(`/watch/${v.video_id}`)} />
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
+            <h2 className="video-page-section-title" style={{ margin: 0 }}>More Like This</h2>
+            <span style={{ color: '#9ca3af', fontSize: '0.85rem' }}>{moreLikeThis.length} comedy specials recommended</span>
+          </div>
+
+          <div className="netflix-more-like-this-grid">
+            {visibleMoreLikeThis.map(item => (
+              <div 
+                key={item.video_id} 
+                className="netflix-rec-card"
+                onClick={() => navigate(`/watch/${item.video_id}`)}
+              >
+                <div className="netflix-rec-thumb-wrap">
+                  <img 
+                    src={item.thumbnail_url} 
+                    alt={item.title} 
+                    className="netflix-rec-thumb"
+                    loading="lazy" 
+                  />
+                  <span className="netflix-rec-duration">
+                    {formatDuration(item.duration_seconds)}
+                  </span>
+                </div>
+
+                <div className="netflix-rec-body">
+                  <div className="netflix-rec-meta-row">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span className="netflix-rec-rating-badge">
+                        {item.suggested_rating || 'U/A 16+'}
+                      </span>
+                      <span className="netflix-rec-hd-badge">HD</span>
+                      <span className="netflix-rec-year">
+                        {item.published_at ? new Date(item.published_at).getFullYear() : '2024'}
+                      </span>
+                    </div>
+
+                    <button 
+                      className="netflix-rec-add-btn" 
+                      title="Add to My List"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        fetch(`${API_BASE}/user/favorites`, {
+                          method: 'POST',
+                          headers: authHeaders,
+                          body: JSON.stringify({ videoId: item.video_id })
+                        });
+                      }}
+                    >
+                      <Plus size={16} />
+                    </button>
+                  </div>
+
+                  <h3 className="netflix-rec-title" title={item.title}>
+                    {item.title}
+                  </h3>
+
+                  <p className="netflix-rec-synopsis">
+                    {item.synopsis || `A hilarious stand-up performance by ${item.comedian_name} exploring relatable observations and laugh-out-loud punchlines.`}
+                  </p>
+                </div>
+              </div>
             ))}
           </div>
+
+          {/* Expand / Show More Arrow Divider */}
+          {moreLikeThis.length > 9 && (
+            <div className="netflix-expand-divider">
+              <button 
+                className="netflix-expand-btn" 
+                onClick={() => setExpandedMoreLikeThis(!expandedMoreLikeThis)}
+              >
+                <span>{expandedMoreLikeThis ? 'Show Less' : 'Explore More Recommendations'}</span>
+                <ChevronDown 
+                  size={18} 
+                  style={{ 
+                    transform: expandedMoreLikeThis ? 'rotate(180deg)' : 'none', 
+                    transition: 'transform 0.25s ease' 
+                  }} 
+                />
+              </button>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Netflix-style Detailed About Section (Matches user screenshot) */}
+      {/* Netflix-style Detailed About Section */}
       <div className="netflix-about-container">
         <h2 className="netflix-about-header">
           About <span className="netflix-about-title-highlight">{video.title}</span>
@@ -607,7 +715,7 @@ export default function VideoPage() {
             <span className="netflix-about-label">This Special Is:</span>
             <span className="netflix-about-val">
               {video.tags && video.tags.length > 0 
-                ? video.tags.map(t => t.tag_name.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())).join(', ')
+                ? video.tags.map(t => formatTagLabel(t.tag_name)).join(', ')
                 : 'Hilarious, Relatable, Witty, High Energy'}
             </span>
           </div>

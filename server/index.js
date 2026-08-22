@@ -256,6 +256,63 @@ app.get('/api/videos/:id', asyncHandler(async (req, res) => {
   res.json(video);
 }));
 
+app.get('/api/videos/:id/related', asyncHandler(async (req, res) => {
+  const currentVideo = dbGet(`
+    SELECT v.*, c.name as comedian_name 
+    FROM videos v 
+    JOIN comedians c ON v.comedian_id = c.comedian_id 
+    WHERE v.video_id = ?
+  `, [req.params.id]);
+
+  if (!currentVideo) return res.json([]);
+
+  // Fetch candidate videos from same comedian, peer comedians, and top trending
+  const candidates = dbAll(`
+    SELECT v.*, c.name as comedian_name
+    FROM videos v
+    JOIN comedians c ON v.comedian_id = c.comedian_id
+    WHERE v.video_id != ?
+    ORDER BY 
+      CASE WHEN v.comedian_id = ? THEN 1 ELSE 2 END,
+      v.view_count DESC
+    LIMIT 30
+  `, [req.params.id, currentVideo.comedian_id]);
+
+  // Attach tags & punchy Netflix-style synopses
+  const result = candidates.map(v => {
+    const vTags = dbAll(`
+      SELECT t.tag_name, t.tag_type FROM tags t 
+      JOIN video_tags vt ON t.tag_id = vt.tag_id 
+      WHERE vt.video_id = ?
+    `, [v.video_id]);
+    
+    // Generate punchy stand-up synopsis
+    let synopsis = `A hit stand-up comedy set by ${v.comedian_name} packed with sharp timing, relatable observations, and live audience laughs.`;
+    const titleLower = (v.title || '').toLowerCase();
+    if (titleLower.includes('hostel') || titleLower.includes('college') || titleLower.includes('school') || titleLower.includes('cheating')) {
+      synopsis = `Relive chaotic hostel memories, classroom nostalgia, and hilarious misadventures in this iconic performance.`;
+    } else if (titleLower.includes('roast') || titleLower.includes('brocode') || v.suggested_rating === '18+') {
+      synopsis = `An unfiltered, high-voltage comedy battle with savage one-liners, unscripted banter, and rapid-fire punchlines.`;
+    } else if (titleLower.includes('crowd') || titleLower.includes('interaction')) {
+      synopsis = `Spontaneous, high-energy crowd work with quick-witted comebacks and unexpected audience banter.`;
+    } else if (titleLower.includes('relationship') || titleLower.includes('dating') || titleLower.includes('marriage') || titleLower.includes('breakup')) {
+      synopsis = `A hilarious take on modern romance, awkward dates, arranged marriage expectations, and couples' quirks.`;
+    } else if (titleLower.includes('delhi') || titleLower.includes('mumbai') || titleLower.includes('corporate') || titleLower.includes('job') || titleLower.includes('office')) {
+      synopsis = `Sharp observational comedy taking on corporate office absurdities, city cultures, and everyday Indian life.`;
+    } else if (v.duration_seconds >= 3000) {
+      synopsis = `A full-length comedy special delivering masterclass storytelling, personal confessions, and non-stop punchlines.`;
+    }
+
+    return {
+      ...v,
+      tags: vTags,
+      synopsis
+    };
+  });
+
+  res.json(result);
+}));
+
 app.get('/api/comedians', asyncHandler(async (req, res) => {
   const comedians = dbAll(`
     SELECT c.*, 
