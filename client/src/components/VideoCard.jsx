@@ -139,7 +139,19 @@ export default function VideoCard({ video, onClick, onRemoveFromRow }) {
       onMouseLeave={handleMouseLeave}
     >
       <div className="video-thumb-container">
-        <img src={video.thumbnail_url} alt={video.title} className="video-thumb" loading="lazy" />
+        <img 
+          src={video.thumbnail_url || `https://i.ytimg.com/vi/${video.video_id}/hqdefault.jpg`} 
+          alt={video.title} 
+          className="video-thumb" 
+          loading="lazy" 
+          onError={(e) => {
+            if (e.target.src.includes('hqdefault.jpg')) {
+              e.target.src = `https://i.ytimg.com/vi/${video.video_id}/mqdefault.jpg`;
+            } else if (e.target.src.includes('mqdefault.jpg')) {
+              e.target.src = `https://i.ytimg.com/vi/${video.video_id}/0.jpg`;
+            }
+          }}
+        />
         <span className="duration-badge">{formatDuration(video.duration_seconds)}</span>
         
         {/* Strictly Recently Added (<= 2 Weeks) */}
@@ -169,7 +181,19 @@ export default function VideoCard({ video, onClick, onRemoveFromRow }) {
               allow="autoplay; encrypted-media"
             />
           ) : (
-            <img src={video.thumbnail_url} alt={video.title} className="video-hover-thumb" loading="lazy" />
+            <img 
+              src={video.thumbnail_url || `https://i.ytimg.com/vi/${video.video_id}/hqdefault.jpg`} 
+              alt={video.title} 
+              className="video-hover-thumb" 
+              loading="lazy" 
+              onError={(e) => {
+                if (e.target.src.includes('hqdefault.jpg')) {
+                  e.target.src = `https://i.ytimg.com/vi/${video.video_id}/mqdefault.jpg`;
+                } else if (e.target.src.includes('mqdefault.jpg')) {
+                  e.target.src = `https://i.ytimg.com/vi/${video.video_id}/0.jpg`;
+                }
+              }}
+            />
           )}
 
           {progressPercent > 0 && (

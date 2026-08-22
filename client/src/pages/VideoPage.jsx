@@ -655,10 +655,17 @@ export default function VideoPage() {
                 >
                   <div className="netflix-rec-thumb-wrap">
                     <img 
-                      src={item.thumbnail_url} 
+                      src={item.thumbnail_url || `https://i.ytimg.com/vi/${item.video_id}/hqdefault.jpg`} 
                       alt={item.title} 
                       className="netflix-rec-thumb"
                       loading="lazy" 
+                      onError={(e) => {
+                        if (e.target.src.includes('hqdefault.jpg')) {
+                          e.target.src = `https://i.ytimg.com/vi/${item.video_id}/mqdefault.jpg`;
+                        } else if (e.target.src.includes('mqdefault.jpg')) {
+                          e.target.src = `https://i.ytimg.com/vi/${item.video_id}/0.jpg`;
+                        }
+                      }}
                     />
                     <span className="netflix-rec-duration">
                       {formatDuration(item.duration_seconds)}

@@ -166,9 +166,9 @@ input, select { font-family: inherit; }
 .nav-search-wrapper:focus-within {
   width: 380px;
   height: 46px;
-  border-color: #e50914;
-  background: rgba(26, 26, 36, 0.98);
-  box-shadow: 0 0 20px rgba(229, 9, 20, 0.35);
+  border-color: #ffffff;
+  background: rgba(28, 28, 38, 0.98);
+  box-shadow: 0 0 16px rgba(255, 255, 255, 0.15);
 }
 .nav-search-icon {
   position: absolute;
@@ -1029,8 +1029,8 @@ input, select { font-family: inherit; }
 }
 
 .search-large-bar:focus-within {
-  border-color: #e50914;
-  box-shadow: 0 0 24px rgba(229, 9, 20, 0.35);
+  border-color: #ffffff;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.15);
   background: rgba(28, 28, 38, 0.98);
 }
 
