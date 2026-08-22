@@ -240,44 +240,41 @@ export default function VideoCard({ video, onClick, onRemoveFromRow }) {
               </React.Fragment>
             ))}
           </div>
+
+          {/* In-place Netflix Popover for Remove from Row */}
+          {showRemoveModal && (
+            <div 
+              className="card-inplace-popover" 
+              onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
+            >
+              <div className="inplace-popover-header">
+                <span className="inplace-popover-title">Tell us more</span>
+                <button 
+                  className="inplace-popover-close" 
+                  onClick={(e) => { e.stopPropagation(); setShowRemoveModal(false); }}
+                >
+                  <X size={14} />
+                </button>
+              </div>
+
+              <div className="inplace-popover-options">
+                <button className="inplace-popover-opt" onClick={() => handleConfirmRemove('like')}>
+                  <span className="inplace-opt-icon">👍</span>
+                  <span>I like this but don't want to continue watching</span>
+                </button>
+                <button className="inplace-popover-opt" onClick={() => handleConfirmRemove('dislike')}>
+                  <span className="inplace-opt-icon">👎</span>
+                  <span>I don't like this</span>
+                </button>
+                <button className="inplace-popover-opt" onClick={() => handleConfirmRemove('cleanup')}>
+                  <span className="inplace-opt-icon">🧹</span>
+                  <span>Just cleaning up</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
-
-      {/* Netflix 'Tell Us More' Remove From Row Modal */}
-      {showRemoveModal && (
-        <div 
-          className="netflix-tell-us-more-backdrop" 
-          onClick={(e) => { 
-            e.stopPropagation(); 
-            e.preventDefault();
-            setShowRemoveModal(false); 
-          }}
-        >
-          <div className="netflix-tell-us-more-modal" onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
-            <div className="tell-us-more-header">
-              <h3 className="tell-us-more-title">Tell us more</h3>
-              <button className="tell-us-more-close" onClick={() => setShowRemoveModal(false)}>
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="tell-us-more-options">
-              <button className="tell-us-more-opt" onClick={() => handleConfirmRemove('like')}>
-                <span className="opt-icon">👍</span>
-                <span className="opt-text">I like this but don't want to continue watching</span>
-              </button>
-              <button className="tell-us-more-opt" onClick={() => handleConfirmRemove('dislike')}>
-                <span className="opt-icon">👎</span>
-                <span className="opt-text">I don't like this</span>
-              </button>
-              <button className="tell-us-more-opt" onClick={() => handleConfirmRemove('cleanup')}>
-                <span className="opt-icon">🧹</span>
-                <span className="opt-text">Just cleaning up</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

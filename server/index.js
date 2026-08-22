@@ -370,9 +370,9 @@ app.get('/api/shows/:id', asyncHandler(async (req, res) => {
 
 app.get('/api/categories', asyncHandler(async (req, res) => {
   const categories = [];
-
   const getCategoryVideos = (query, params = []) => dbAll(query, params);
 
+  // 1. Trending Now (Standard Cards)
   const trendingVideos = getCategoryVideos(`
     SELECT DISTINCT v.*, c.name as comedian_name 
     FROM videos v 
@@ -383,16 +383,31 @@ app.get('/api/categories', asyncHandler(async (req, res) => {
   `);
   if (trendingVideos.length > 0) categories.push({ title: 'Trending Now', videos: trendingVideos });
 
-  const newVideos = getCategoryVideos(`
+  // 2. Top 10 Specials in India Today (Top 10 Numbered)
+  const topSpecials = getCategoryVideos(`
+    SELECT v.*, c.name as comedian_name
+    FROM videos v
+    JOIN comedians c ON v.comedian_id = c.comedian_id
+    WHERE v.duration_seconds >= 3600 AND (v.content_type = 'full_special' OR LOWER(v.title) LIKE '%special%' OR LOWER(v.title) LIKE '%full%')
+    ORDER BY v.view_count DESC
+    LIMIT 10
+  `);
+  if (topSpecials.length > 0) categories.push({ title: 'Top 10 Specials Today', videos: topSpecials, isTop10: true });
+
+  // 3. Crowd Work Masters (Standard Cards)
+  const crowdVideos = getCategoryVideos(`
     SELECT DISTINCT v.*, c.name as comedian_name 
     FROM videos v 
     JOIN comedians c ON v.comedian_id = c.comedian_id
-    WHERE v.duration_seconds >= 1800
-    ORDER BY v.published_at DESC
+    JOIN video_tags vt ON v.video_id = vt.video_id
+    JOIN tags t ON vt.tag_id = t.tag_id
+    WHERE t.tag_name = 'crowd-work-heavy' AND t.tag_type = 'style' AND v.duration_seconds >= 1800
+    ORDER BY RANDOM()
     LIMIT 10
   `);
-  if (newVideos.length > 0) categories.push({ title: 'Recently Added', videos: newVideos, isRecentlyAdded: true });
+  if (crowdVideos.length > 0) categories.push({ title: 'Crowd Work Masters', videos: crowdVideos });
 
+  // 4. Dark & Cynical Comedy (Standard Cards)
   const darkVideos = getCategoryVideos(`
     SELECT DISTINCT v.*, c.name as comedian_name 
     FROM videos v 
@@ -405,6 +420,19 @@ app.get('/api/categories', asyncHandler(async (req, res) => {
   `);
   if (darkVideos.length > 0) categories.push({ title: 'Dark & Cynical', videos: darkVideos });
 
+  // 5. Top 10 Standup Bits Today (Top 10 Numbered)
+  const topBits = getCategoryVideos(`
+    SELECT v.*, c.name as comedian_name
+    FROM videos v
+    JOIN comedians c ON v.comedian_id = c.comedian_id
+    WHERE (v.content_type IN ('standup_set', 'standup_bit') OR v.content_type IS NULL)
+      AND v.duration_seconds BETWEEN 180 AND 2400
+    ORDER BY v.view_count DESC
+    LIMIT 10
+  `);
+  if (topBits.length > 0) categories.push({ title: 'Top 10 Standup Bits Today', videos: topBits, isTop10: true });
+
+  // 6. Family & Wholesome (Standard Cards)
   const familyVideos = getCategoryVideos(`
     SELECT DISTINCT v.*, c.name as comedian_name 
     FROM videos v 
@@ -424,18 +452,7 @@ app.get('/api/categories', asyncHandler(async (req, res) => {
   `);
   if (familyVideos.length > 0) categories.push({ title: 'Family & Wholesome', videos: familyVideos });
 
-  const crowdVideos = getCategoryVideos(`
-    SELECT DISTINCT v.*, c.name as comedian_name 
-    FROM videos v 
-    JOIN comedians c ON v.comedian_id = c.comedian_id
-    JOIN video_tags vt ON v.video_id = vt.video_id
-    JOIN tags t ON vt.tag_id = t.tag_id
-    WHERE t.tag_name = 'crowd-work-heavy' AND t.tag_type = 'style' AND v.duration_seconds >= 1800
-    ORDER BY RANDOM()
-    LIMIT 10
-  `);
-  if (crowdVideos.length > 0) categories.push({ title: 'Crowd Work Masters', videos: crowdVideos });
-
+  // 7. Storytellers (Standard Cards)
   const storytellerVideos = getCategoryVideos(`
     SELECT DISTINCT v.*, c.name as comedian_name 
     FROM videos v 
@@ -448,6 +465,19 @@ app.get('/api/categories', asyncHandler(async (req, res) => {
   `);
   if (storytellerVideos.length > 0) categories.push({ title: 'Storytellers', videos: storytellerVideos });
 
+  // 8. Top 10 Roasts (Top 10 Numbered)
+  const topRoasts = getCategoryVideos(`
+    SELECT v.*, c.name as comedian_name
+    FROM videos v
+    JOIN comedians c ON v.comedian_id = c.comedian_id
+    WHERE v.content_type = 'roast'
+       OR LOWER(v.title) LIKE '%roast%'
+    ORDER BY v.view_count DESC
+    LIMIT 10
+  `);
+  if (topRoasts.length > 0) categories.push({ title: 'Top 10 Roasts Today', videos: topRoasts, isTop10: true });
+
+  // 9. Relationship Comedy (Standard Cards)
   const relationshipVideos = getCategoryVideos(`
     SELECT DISTINCT v.*, c.name as comedian_name 
     FROM videos v 
@@ -460,6 +490,7 @@ app.get('/api/categories', asyncHandler(async (req, res) => {
   `);
   if (relationshipVideos.length > 0) categories.push({ title: 'Relationship Comedy', videos: relationshipVideos });
 
+  // 10. Corporate Life (Standard Cards)
   const corporateVideos = getCategoryVideos(`
     SELECT DISTINCT v.*, c.name as comedian_name 
     FROM videos v 
@@ -472,11 +503,7 @@ app.get('/api/categories', asyncHandler(async (req, res) => {
   `);
   if (corporateVideos.length > 0) categories.push({ title: 'Corporate Life', videos: corporateVideos });
 
-  // ==============================
-  // TOP 10 SECTIONS (Netflix-style)
-  // ==============================
-
-  // Comedy Series — series and episodes
+  // 11. Comedy Series (Top 10 Numbered)
   const topEpisodes = getCategoryVideos(`
     SELECT DISTINCT v.*, c.name as comedian_name 
     FROM videos v 
@@ -485,54 +512,18 @@ app.get('/api/categories', asyncHandler(async (req, res) => {
     ORDER BY v.view_count DESC
     LIMIT 10
   `);
-  if (topEpisodes.length > 0) categories.push({ title: 'Comedy Series', videos: topEpisodes, isTop10: true });
+  if (topEpisodes.length > 0) categories.push({ title: 'Top Comedy Series', videos: topEpisodes, isTop10: true });
 
-  // Top 10 Comedy Specials — full specials ranked by views
-  const topSpecials = getCategoryVideos(`
-    SELECT v.*, c.name as comedian_name
-    FROM videos v
+  // 12. Recently Added (Standard Cards)
+  const newVideos = getCategoryVideos(`
+    SELECT DISTINCT v.*, c.name as comedian_name 
+    FROM videos v 
     JOIN comedians c ON v.comedian_id = c.comedian_id
-    WHERE v.duration_seconds >= 3600 AND (v.content_type = 'full_special' OR LOWER(v.title) LIKE '%special%' OR LOWER(v.title) LIKE '%full%')
-    ORDER BY v.view_count DESC
+    WHERE v.duration_seconds >= 1800
+    ORDER BY v.published_at DESC
     LIMIT 10
   `);
-  if (topSpecials.length > 0) categories.push({ title: topSpecials.length >= 10 ? 'Top 10 Specials Today' : 'Top Comedy Specials', videos: topSpecials, isTop10: true });
-
-  // Top 10 Standup Bits — shorter popular standup sets (3-40 min)
-  const topBits = getCategoryVideos(`
-    SELECT v.*, c.name as comedian_name
-    FROM videos v
-    JOIN comedians c ON v.comedian_id = c.comedian_id
-    WHERE (v.content_type IN ('standup_set', 'standup_bit') OR v.content_type IS NULL)
-      AND v.duration_seconds BETWEEN 180 AND 2400
-    ORDER BY v.view_count DESC
-    LIMIT 10
-  `);
-  if (topBits.length > 0) categories.push({ title: 'Top 10 Standup Bits Today', videos: topBits, isTop10: true });
-
-  // Top 10 Roasts
-  const topRoasts = getCategoryVideos(`
-    SELECT v.*, c.name as comedian_name
-    FROM videos v
-    JOIN comedians c ON v.comedian_id = c.comedian_id
-    WHERE v.content_type = 'roast'
-       OR LOWER(v.title) LIKE '%roast%'
-    ORDER BY v.view_count DESC
-    LIMIT 10
-  `);
-  if (topRoasts.length > 0) categories.push({ title: topRoasts.length >= 10 ? 'Top 10 Roasts' : 'Top Roasts', videos: topRoasts, isTop10: true });
-
-  // Top 10 Crowd Work
-  const topCrowdWork = getCategoryVideos(`
-    SELECT v.*, c.name as comedian_name
-    FROM videos v
-    JOIN comedians c ON v.comedian_id = c.comedian_id
-    WHERE v.content_type = 'crowd_work'
-       OR LOWER(v.title) LIKE '%crowd%'
-    ORDER BY v.view_count DESC
-    LIMIT 10
-  `);
-  if (topCrowdWork.length > 0) categories.push({ title: topCrowdWork.length >= 10 ? 'Top 10 Crowd Work' : 'Top Crowd Work', videos: topCrowdWork, isTop10: true });
+  if (newVideos.length > 0) categories.push({ title: '✨ Recently Added', videos: newVideos, isRecentlyAdded: true });
 
   res.json(categories);
 }));
