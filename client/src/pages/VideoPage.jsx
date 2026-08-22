@@ -20,6 +20,7 @@ export default function VideoPage() {
   const [hoverRating, setHoverRating] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
   const [isAddedToList, setIsAddedToList] = useState(false);
+  const [myListIds, setMyListIds] = useState(new Set());
   const [showRatingSuccess, setShowRatingSuccess] = useState(false);
   const [moreLikeThis, setMoreLikeThis] = useState([]);
   const [expandedMoreLikeThis, setExpandedMoreLikeThis] = useState(false);
@@ -138,14 +139,16 @@ export default function VideoPage() {
       })
       .catch(() => {});
 
-    // Check user favorites status
+    // Check user favorites status & populate myListIds
     if (user && token) {
       fetch(`${API_BASE}/user/favorites`, { headers: authHeaders })
         .then(res => res.json())
         .then(favorites => {
-          if (Array.isArray(favorites) && favorites.some(f => f.video_id === videoId)) {
-            setIsLiked(true);
-            setIsAddedToList(true);
+          if (Array.isArray(favorites)) {
+            const favIds = new Set(favorites.map(f => f.video_id));
+            setMyListIds(favIds);
+            setIsLiked(favIds.has(videoId));
+            setIsAddedToList(favIds.has(videoId));
           } else {
             setIsLiked(false);
             setIsAddedToList(false);
@@ -240,8 +243,8 @@ export default function VideoPage() {
         const totalDuration = video?.duration_seconds || Math.floor(playerRef.current.getDuration() || 0);
         const isCompleted = completed || (totalDuration > 0 && currentTime / totalDuration >= 0.9);
 
-        // Near end of video -> Trigger autoplay countdown once
-        if (totalDuration > 10 && currentTime >= totalDuration - 4 && !countdownActiveRef.current) {
+        // Near end of video (10-12 seconds before end) -> Trigger autoplay countdown
+        if (totalDuration > 15 && currentTime >= totalDuration - 12 && !countdownActiveRef.current) {
           triggerAutoplayCountdown();
         }
 
@@ -275,19 +278,23 @@ export default function VideoPage() {
   const triggerAutoplayCountdown = () => {
     if (!autoplayEnabled || countdownActiveRef.current) return;
     
-    // Resolve target next video reliably
+    // Resolve target next video reliably across all comics & specials
     const candidates = [...moreLikeThis, ...comedianVideos].filter(v => v && v.video_id !== videoId);
-    const targetNext = nextVideo && nextVideo.video_id !== videoId ? nextVideo : (candidates.length > 0 ? candidates[0] : null);
+    let targetNext = nextVideo && nextVideo.video_id !== videoId ? nextVideo : (candidates.length > 0 ? candidates[0] : null);
     
+    if (!targetNext && moreLikeThis.length > 0) {
+      targetNext = moreLikeThis.find(v => v.video_id !== videoId);
+    }
+
     if (!targetNext) return;
 
     countdownActiveRef.current = true;
     setNextVideo(targetNext);
-    setCountdown(5);
+    setCountdown(10);
 
     if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
 
-    let sec = 5;
+    let sec = 10;
     countdownTimerRef.current = setInterval(() => {
       sec -= 1;
       if (sec <= 0) {
@@ -319,7 +326,10 @@ export default function VideoPage() {
     try {
       const newState = !isLiked;
       setIsLiked(newState);
+      const newSet = new Set(myListIds);
       if (newState) {
+        newSet.add(videoId);
+        setMyListIds(newSet);
         setShowLikeAnim(true);
         setTimeout(() => setShowLikeAnim(false), 1000);
         await fetch(`${API_BASE}/user/favorites`, {
@@ -328,6 +338,8 @@ export default function VideoPage() {
           body: JSON.stringify({ videoId })
         });
       } else {
+        newSet.delete(videoId);
+        setMyListIds(newSet);
         await fetch(`${API_BASE}/user/favorites/${videoId}`, {
           method: 'DELETE',
           headers: authHeaders
@@ -343,13 +355,18 @@ export default function VideoPage() {
     try {
       const newState = !isAddedToList;
       setIsAddedToList(newState);
+      const newSet = new Set(myListIds);
       if (newState) {
+        newSet.add(videoId);
+        setMyListIds(newSet);
         await fetch(`${API_BASE}/user/favorites`, {
           method: 'POST',
           headers: authHeaders,
           body: JSON.stringify({ videoId })
         });
       } else {
+        newSet.delete(videoId);
+        setMyListIds(newSet);
         await fetch(`${API_BASE}/user/favorites/${videoId}`, {
           method: 'DELETE',
           headers: authHeaders
@@ -357,6 +374,42 @@ export default function VideoPage() {
       }
     } catch {
       setIsAddedToList(!isAddedToList);
+    }
+  };
+
+  const handleToggleRecCardMyList = async (targetVideoId, e) => {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+    if (!user) { setAuthModalOpen(true); return; }
+
+    const isAlreadyAdded = myListIds.has(targetVideoId);
+    const newSet = new Set(myListIds);
+
+    if (isAlreadyAdded) {
+      newSet.delete(targetVideoId);
+      setMyListIds(newSet);
+      if (targetVideoId === videoId) {
+        setIsLiked(false);
+        setIsAddedToList(false);
+      }
+      await fetch(`${API_BASE}/user/favorites/${targetVideoId}`, {
+        method: 'DELETE',
+        headers: authHeaders
+      }).catch(() => {});
+    } else {
+      newSet.add(targetVideoId);
+      setMyListIds(newSet);
+      if (targetVideoId === videoId) {
+        setIsLiked(true);
+        setIsAddedToList(true);
+      }
+      await fetch(`${API_BASE}/user/favorites`, {
+        method: 'POST',
+        headers: authHeaders,
+        body: JSON.stringify({ videoId: targetVideoId })
+      }).catch(() => {});
     }
   };
 
@@ -583,18 +636,6 @@ export default function VideoPage() {
         </div>
       </div>
 
-      {/* Comedian's other videos */}
-      {comedianVideos.length > 0 && (
-        <div className="video-page-section">
-          <h2 className="video-page-section-title">More by {video.comedian_name}</h2>
-          <div className="video-grid more-videos-grid">
-            {comedianVideos.map(v => (
-              <VideoCard key={v.video_id} video={v} onClick={() => navigate(`/watch/${v.video_id}`)} />
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Netflix-Style "More Like This" Grid (Matching User Screenshot) */}
       {moreLikeThis.length > 0 && (
         <div className="video-page-section">
@@ -604,62 +645,61 @@ export default function VideoPage() {
           </div>
 
           <div className="netflix-more-like-this-grid">
-            {visibleMoreLikeThis.map(item => (
-              <div 
-                key={item.video_id} 
-                className="netflix-rec-card"
-                onClick={() => navigate(`/watch/${item.video_id}`)}
-              >
-                <div className="netflix-rec-thumb-wrap">
-                  <img 
-                    src={item.thumbnail_url} 
-                    alt={item.title} 
-                    className="netflix-rec-thumb"
-                    loading="lazy" 
-                  />
-                  <span className="netflix-rec-duration">
-                    {formatDuration(item.duration_seconds)}
-                  </span>
-                </div>
-
-                <div className="netflix-rec-body">
-                  <div className="netflix-rec-meta-row">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span className="netflix-rec-rating-badge">
-                        {item.suggested_rating || 'U/A 16+'}
-                      </span>
-                      <span className="netflix-rec-hd-badge">HD</span>
-                      <span className="netflix-rec-year">
-                        {item.published_at ? new Date(item.published_at).getFullYear() : '2024'}
-                      </span>
-                    </div>
-
-                    <button 
-                      className="netflix-rec-add-btn" 
-                      title="Add to My List"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        fetch(`${API_BASE}/user/favorites`, {
-                          method: 'POST',
-                          headers: authHeaders,
-                          body: JSON.stringify({ videoId: item.video_id })
-                        });
-                      }}
-                    >
-                      <Plus size={16} />
-                    </button>
+            {visibleMoreLikeThis.map(item => {
+              const isAdded = myListIds.has(item.video_id);
+              return (
+                <div 
+                  key={item.video_id} 
+                  className="netflix-rec-card"
+                  onClick={() => navigate(`/watch/${item.video_id}`)}
+                >
+                  <div className="netflix-rec-thumb-wrap">
+                    <img 
+                      src={item.thumbnail_url} 
+                      alt={item.title} 
+                      className="netflix-rec-thumb"
+                      loading="lazy" 
+                    />
+                    <span className="netflix-rec-duration">
+                      {formatDuration(item.duration_seconds)}
+                    </span>
                   </div>
 
-                  <h3 className="netflix-rec-title" title={item.title}>
-                    {item.title}
-                  </h3>
+                  <div className="netflix-rec-body">
+                    <div className="netflix-rec-meta-row">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span className="netflix-rec-rating-badge">
+                          {item.suggested_rating || 'U/A 16+'}
+                        </span>
+                        <span className="netflix-rec-hd-badge">HD</span>
+                        <span className="netflix-rec-year">
+                          {item.published_at ? new Date(item.published_at).getFullYear() : '2024'}
+                        </span>
+                      </div>
 
-                  <p className="netflix-rec-synopsis">
-                    {item.synopsis || `A hilarious stand-up performance by ${item.comedian_name} exploring relatable observations and laugh-out-loud punchlines.`}
-                  </p>
+                      <button 
+                        className={`netflix-rec-add-btn ${isAdded ? 'added' : ''}`}
+                        title={isAdded ? "In My List" : "Add to My List"}
+                        onClick={(e) => handleToggleRecCardMyList(item.video_id, e)}
+                      >
+                        {isAdded ? <Check size={16} color="#4ade80" /> : <Plus size={16} />}
+                        <span className="netflix-tooltip-bubble">
+                          {isAdded ? "In My List" : "Add to My List"}
+                        </span>
+                      </button>
+                    </div>
+
+                    <h3 className="netflix-rec-title" title={item.title}>
+                      {item.title}
+                    </h3>
+
+                    <p className="netflix-rec-synopsis">
+                      {item.synopsis || `A hilarious stand-up performance by ${item.comedian_name} exploring relatable observations and laugh-out-loud punchlines.`}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Expand / Show More Arrow Divider */}

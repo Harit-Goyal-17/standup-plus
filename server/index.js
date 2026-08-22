@@ -938,23 +938,29 @@ app.get('/api/user/watch-history', authenticate, asyncHandler(async (req, res) =
   const profileId = req.headers['x-profile-id'] || req.user.userId;
   const isDefaultProfile = profileId === req.user.userId || profileId.endsWith('-default-profile');
   
-  const history = isDefaultProfile
-    ? dbAll(`
+  const onlyInProgress = req.query.inProgress === 'true';
+
+  let query = isDefaultProfile
+    ? `
         SELECT v.*, c.name as comedian_name, w.watched_at, w.watch_duration_seconds, w.completed
         FROM watch_history w 
         JOIN videos v ON w.video_id = v.video_id 
         JOIN comedians c ON v.comedian_id = c.comedian_id
-        WHERE w.user_id = ? OR w.user_id = ?
+        WHERE (w.user_id = ? OR w.user_id = ?)
+        ${onlyInProgress ? 'AND w.completed = 0 AND (v.duration_seconds = 0 OR w.watch_duration_seconds * 1.0 / v.duration_seconds < 0.90)' : ''}
         ORDER BY w.watched_at DESC
-      `, [profileId, req.user.userId])
-    : dbAll(`
+      `
+    : `
         SELECT v.*, c.name as comedian_name, w.watched_at, w.watch_duration_seconds, w.completed
         FROM watch_history w 
         JOIN videos v ON w.video_id = v.video_id 
         JOIN comedians c ON v.comedian_id = c.comedian_id
         WHERE w.user_id = ?
+        ${onlyInProgress ? 'AND w.completed = 0 AND (v.duration_seconds = 0 OR w.watch_duration_seconds * 1.0 / v.duration_seconds < 0.90)' : ''}
         ORDER BY w.watched_at DESC
-      `, [profileId]);
+      `;
+
+  const history = isDefaultProfile ? dbAll(query, [profileId, req.user.userId]) : dbAll(query, [profileId]);
 
   // Enrich with tags for hover card dot-separated topics
   const enriched = history.map(video => {
@@ -967,7 +973,26 @@ app.get('/api/user/watch-history', authenticate, asyncHandler(async (req, res) =
 
 app.delete('/api/user/watch-history/:videoId', authenticate, asyncHandler(async (req, res) => {
   const profileId = req.headers['x-profile-id'] || req.user.userId;
+  const { reason } = req.body || {};
+
   dbRun('DELETE FROM watch_history WHERE (user_id = ? OR user_id = ?) AND video_id = ?', [profileId, req.user.userId, req.params.videoId]);
+  
+  if (reason === 'dislike') {
+    // Record low rating to penalize in recommendations
+    dbRun(`
+      INSERT INTO user_ratings (user_id, video_id, rating, rated_at)
+      VALUES (?, ?, 1, ?)
+      ON CONFLICT(user_id, video_id) DO UPDATE SET rating = 1, rated_at = excluded.rated_at
+    `, [profileId, req.params.videoId, new Date().toISOString()]);
+  } else if (reason === 'like') {
+    // Record positive rating
+    dbRun(`
+      INSERT INTO user_ratings (user_id, video_id, rating, rated_at)
+      VALUES (?, ?, 4, ?)
+      ON CONFLICT(user_id, video_id) DO UPDATE SET rating = 4, rated_at = excluded.rated_at
+    `, [profileId, req.params.videoId, new Date().toISOString()]);
+  }
+
   saveDb();
   res.json({ success: true });
 }));

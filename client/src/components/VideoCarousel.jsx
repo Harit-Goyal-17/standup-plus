@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import VideoCard from './VideoCard';
 
-export default function VideoCarousel({ title, videos, onVideoClick, isTop10, actionButton }) {
+export default function VideoCarousel({ title, videos, onVideoClick, isTop10, actionButton, onRemoveFromRow }) {
   const [currentPage, setCurrentPage] = useState(0);
 
   if (!videos || videos.length === 0) return null;
@@ -52,11 +52,11 @@ export default function VideoCarousel({ title, videos, onVideoClick, isTop10, ac
               return (
                 <div key={vid.video_id} className="top10-item">
                   <span className="top10-number">{index + 1}</span>
-                  <VideoCard video={vid} onClick={onVideoClick} />
+                  <VideoCard video={vid} onClick={onVideoClick} onRemoveFromRow={onRemoveFromRow} />
                 </div>
               );
             }
-            return <VideoCard key={vid.video_id} video={vid} onClick={onVideoClick} />;
+            return <VideoCard key={vid.video_id} video={vid} onClick={onVideoClick} onRemoveFromRow={onRemoveFromRow} />;
           })}
         </div>
       </div>

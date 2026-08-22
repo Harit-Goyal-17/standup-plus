@@ -44,7 +44,7 @@ export default function HomePage() {
           const [recRes, favComedianRes, historyRes] = await Promise.all([
             fetch(`${API_BASE}/recommendations?limit=10`, { headers: authHeaders }),
             fetch(`${API_BASE}/user/favorite-comedian`, { headers: authHeaders }),
-            fetch(`${API_BASE}/user/watch-history`, { headers: authHeaders })
+            fetch(`${API_BASE}/user/watch-history?inProgress=true`, { headers: authHeaders })
           ]);
           
           if (recRes.ok) {
@@ -94,7 +94,12 @@ export default function HomePage() {
         
         {/* Row 2: Continue Watching for active profile */}
         {user && watchHistory.length > 0 && (
-          <VideoCarousel title={`Continue Watching for ${profileDisplayName}`} videos={watchHistory} onVideoClick={handleVideoClick} />
+          <VideoCarousel 
+            title={`Continue Watching for ${profileDisplayName}`} 
+            videos={watchHistory} 
+            onVideoClick={handleVideoClick} 
+            onRemoveFromRow={(id) => setWatchHistory(prev => prev.filter(v => v.video_id !== id))}
+          />
         )}
 
         {/* Row 3: Favorite Comedian (if applicable) */}

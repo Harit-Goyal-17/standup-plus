@@ -1,15 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Play, Plus, Heart, ChevronDown, Check } from 'lucide-react';
+import { Play, Plus, Heart, ChevronDown, Check, X, Trash2 } from 'lucide-react';
 import { formatDuration, formatViews, getRatingColor, getDotSeparatedTopics, API_BASE } from '../utils';
 import { useAuth } from '../context/AuthContext';
 
-export default function VideoCard({ video, onClick }) {
+export default function VideoCard({ video, onClick, onRemoveFromRow }) {
   const { user, token, activeProfile, setAuthModalOpen } = useAuth();
   const [added, setAdded] = useState(false);
   const [liked, setLiked] = useState(false);
   const [showLikeAnim, setShowLikeAnim] = useState(false);
   const [isPlayingPreview, setIsPlayingPreview] = useState(false);
   const [alignment, setAlignment] = useState('center');
+  const [showRemoveModal, setShowRemoveModal] = useState(false);
   const cardRef = useRef(null);
   const hoverTimerRef = useRef(null);
 
@@ -102,6 +103,26 @@ export default function VideoCard({ video, onClick }) {
     onClick(video);
   };
 
+  const handleConfirmRemove = async (reason) => {
+    setShowRemoveModal(false);
+    try {
+      await fetch(`${API_BASE}/user/watch-history/${video.video_id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          ...(activeProfile?.profile_id ? { 'x-profile-id': activeProfile.profile_id } : {})
+        },
+        body: JSON.stringify({ reason })
+      });
+      if (onRemoveFromRow) {
+        onRemoveFromRow(video.video_id);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const TWO_WEEKS_MS = 14 * 24 * 60 * 60 * 1000;
   const isRecentlyAdded = Boolean(
     video.isRecentlyAdded || 
@@ -170,12 +191,25 @@ export default function VideoCard({ video, onClick }) {
                 <Play size={18} fill="black" color="black" />
               </button>
               <button className="video-hover-action-btn" data-tooltip="Add to My List" onClick={handleAdd}>
-                {added ? <Check size={18} /> : <Plus size={18} />}
+                {added ? <Check size={18} color="#4ade80" /> : <Plus size={18} />}
               </button>
               <button className="video-hover-action-btn" data-tooltip="I like this" onClick={handleLike} style={{ position: 'relative' }}>
                 <Heart size={18} fill={liked ? '#ff416c' : 'none'} color={liked ? '#ff416c' : 'white'} />
                 {showLikeAnim && <div className="floating-like-anim"><Heart size={30} fill="#ff416c" color="#ff416c" /></div>}
               </button>
+              {(progressPercent > 0 || onRemoveFromRow) && (
+                <button 
+                  className="video-hover-action-btn" 
+                  data-tooltip="Remove from row" 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    setShowRemoveModal(true);
+                  }}
+                >
+                  <X size={18} />
+                </button>
+              )}
             </div>
             <button className="video-hover-action-btn" data-tooltip="More info" onClick={handleCardClick}>
               <ChevronDown size={18} />
@@ -208,6 +242,42 @@ export default function VideoCard({ video, onClick }) {
           </div>
         </div>
       </div>
+
+      {/* Netflix 'Tell Us More' Remove From Row Modal */}
+      {showRemoveModal && (
+        <div 
+          className="netflix-tell-us-more-backdrop" 
+          onClick={(e) => { 
+            e.stopPropagation(); 
+            e.preventDefault();
+            setShowRemoveModal(false); 
+          }}
+        >
+          <div className="netflix-tell-us-more-modal" onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
+            <div className="tell-us-more-header">
+              <h3 className="tell-us-more-title">Tell us more</h3>
+              <button className="tell-us-more-close" onClick={() => setShowRemoveModal(false)}>
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="tell-us-more-options">
+              <button className="tell-us-more-opt" onClick={() => handleConfirmRemove('like')}>
+                <span className="opt-icon">👍</span>
+                <span className="opt-text">I like this but don't want to continue watching</span>
+              </button>
+              <button className="tell-us-more-opt" onClick={() => handleConfirmRemove('dislike')}>
+                <span className="opt-icon">👎</span>
+                <span className="opt-text">I don't like this</span>
+              </button>
+              <button className="tell-us-more-opt" onClick={() => handleConfirmRemove('cleanup')}>
+                <span className="opt-icon">🧹</span>
+                <span className="opt-text">Just cleaning up</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
