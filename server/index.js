@@ -466,16 +466,159 @@ app.get('/api/tags', asyncHandler(async (req, res) => {
   res.json(grouped);
 }));
 
+const MOOD_INTENTS = [
+  {
+    key: 'cheer_me_up',
+    emoji: '✨',
+    title: 'Cheer Me Up',
+    keywords: ['sad', 'down', 'depressed', 'cheer', 'cheer me up', 'cry', 'crying', 'lonely', 'unhappy', 'bad day', 'low', 'mood off', 'feeling bad', 'cheer up', 'smile', 'comfort'],
+    tones: ['wholesome-and-lighthearted', 'nostalgic-and-warm', 'self-deprecating-humor'],
+    comedians: ['Ravi Gupta', 'Gaurav Kapoor', 'Zakir Khan', 'Aakash Gupta', 'Vivek Samtani', 'Raunaq Rajani'],
+    aiMessage: '✨ AI Mood Match: Curated lighthearted & comforting stand-up sets to lift your spirits and make you smile.'
+  },
+  {
+    key: 'corporate_work',
+    emoji: '💼',
+    title: 'Work & Office Stress',
+    keywords: ['office', 'work', 'corporate', 'job', 'boss', 'colleagues', 'meeting', 'tired of work', 'burnout', 'client', 'appraisal', 'work stress', 'monday', 'salary', 'manager'],
+    themes: ['corporate-and-work-life', 'everyday-absurdities'],
+    comedians: ['Rahul Subramanian', 'Ravi Gupta', 'Amit Tandon', 'Aakash Gupta', 'Jaspreet Singh'],
+    aiMessage: '💼 AI Mood Match: Curated hilarious corporate rants and workplace survival comedy.'
+  },
+  {
+    key: 'relationship_breakup',
+    emoji: '💔',
+    title: 'Relationships & Dating',
+    keywords: ['breakup', 'break up', 'ex', 'relationship', 'dating', 'love', 'heartbreak', 'girlfriend', 'boyfriend', 'tinder', 'bumble', 'arranged marriage', 'wedding', 'marriage', 'single', 'crush', 'romance'],
+    themes: ['romantic-relationships'],
+    comedians: ['Raunaq Rajani', 'Vivek Samtani', 'Swati Sachdeva', 'Zakir Khan', 'Gaurav Kapoor', 'Prashasti Singh'],
+    aiMessage: '💔 AI Mood Match: Curated relationship truths, dating disasters, and hilarious breakup comedy.'
+  },
+  {
+    key: 'dark_sarcasm',
+    emoji: '🖤',
+    title: 'Dark & Cynical Sarcasm',
+    keywords: ['angry', 'frustrated', 'irritated', 'pissed', 'dark', 'sarcastic', 'cynical', 'offensive', 'unhinged', 'roast', 'toxic', 'insult', 'rage', 'biting', 'edgy'],
+    tones: ['dark-and-cynical', 'sarcastic-and-biting', 'raunchy-and-explicit'],
+    comedians: ['Abhishek Upmanyu', 'Munawar', 'Nishant Suri', 'Madhur Virli', 'Aashish Solanki', 'Samay Raina'],
+    aiMessage: '🖤 AI Mood Match: Curated razor-sharp sarcasm, dark humor, and unfiltered roasts.'
+  },
+  {
+    key: 'crowd_work_party',
+    emoji: '🔥',
+    title: 'High Energy & Roasts',
+    keywords: ['bored', 'party', 'friends', 'hangout', 'chaos', 'crazy', 'hype', 'crowd work', 'crowdwork', 'roast', 'unfiltered', 'wild', 'energy', 'roasting', 'fun'],
+    styles: ['crowd-work-heavy', 'physical-and-energetic', 'rapid-fire-one-liners'],
+    comedians: ['Samay Raina', 'Anubhav Singh Bassi', 'Aashish Solanki', 'Kaustubh Agarwal', 'Rahul Dua'],
+    aiMessage: '🔥 AI Mood Match: High-energy crowd work, chaotic panel roasts, and roaring laughs.'
+  },
+  {
+    key: 'family_wholesome',
+    emoji: '🛋️',
+    title: 'Family & Relatable',
+    keywords: ['family', 'parents', 'mom', 'dad', 'relatives', 'wholesome', 'chill', 'clean', 'childhood', 'school', 'nostalgia', 'desi', 'traditional'],
+    tones: ['wholesome-and-lighthearted', 'nostalgic-and-warm'],
+    themes: ['family-and-upbringing'],
+    comedians: ['Amit Tandon', 'Jaspreet Singh', 'Aakash Gupta', 'Prashasti Singh', 'Zakir Khan'],
+    aiMessage: '🛋️ AI Mood Match: Wholesome, relatable family humor and nostalgic upbringing stories.'
+  }
+];
+
 app.get('/api/search', asyncHandler(async (req, res) => {
-  const q = req.query.q || '';
+  const q = (req.query.q || '').trim();
+  if (!q) return res.json({ results: [], isAiMood: false });
+
+  const lowerQ = q.toLowerCase();
+
+  // 1. Detect AI Mood / Vibe Intent
+  const matchedMood = MOOD_INTENTS.find(intent => 
+    intent.keywords.some(kw => lowerQ.includes(kw)) || lowerQ.includes(intent.key.replace(/_/g, ' '))
+  );
+
+  if (matchedMood) {
+    let whereClauses = [];
+    let params = [];
+
+    if (matchedMood.tones && matchedMood.tones.length > 0) {
+      const placeholders = matchedMood.tones.map(() => '?').join(',');
+      whereClauses.push(`v.video_id IN (
+        SELECT vt.video_id FROM video_tags vt JOIN tags t ON vt.tag_id = t.tag_id WHERE t.tag_name IN (${placeholders})
+      )`);
+      params.push(...matchedMood.tones);
+    }
+
+    if (matchedMood.themes && matchedMood.themes.length > 0) {
+      const placeholders = matchedMood.themes.map(() => '?').join(',');
+      whereClauses.push(`v.video_id IN (
+        SELECT vt.video_id FROM video_tags vt JOIN tags t ON vt.tag_id = t.tag_id WHERE t.tag_name IN (${placeholders})
+      )`);
+      params.push(...matchedMood.themes);
+    }
+
+    if (matchedMood.styles && matchedMood.styles.length > 0) {
+      const placeholders = matchedMood.styles.map(() => '?').join(',');
+      whereClauses.push(`v.video_id IN (
+        SELECT vt.video_id FROM video_tags vt JOIN tags t ON vt.tag_id = t.tag_id WHERE t.tag_name IN (${placeholders})
+      )`);
+      params.push(...matchedMood.styles);
+    }
+
+    if (matchedMood.comedians && matchedMood.comedians.length > 0) {
+      const placeholders = matchedMood.comedians.map(() => 'c.name LIKE ?').join(' OR ');
+      whereClauses.push(`(${placeholders})`);
+      params.push(...matchedMood.comedians.map(name => `%${name}%`));
+    }
+
+    const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' OR ')}` : '';
+    const moodVideos = dbAll(`
+      SELECT DISTINCT v.*, c.name as comedian_name
+      FROM videos v
+      JOIN comedians c ON v.comedian_id = c.comedian_id
+      ${whereSql}
+      ORDER BY v.view_count DESC
+      LIMIT 24
+    `, params);
+
+    // Enrich with tags
+    const enriched = moodVideos.map(video => {
+      video.tags = dbAll('SELECT t.tag_name, t.tag_type FROM video_tags vt JOIN tags t ON vt.tag_id = t.tag_id WHERE vt.video_id = ?', [video.video_id]);
+      return video;
+    });
+
+    return res.json({
+      isAiMood: true,
+      moodKey: matchedMood.key,
+      moodTitle: matchedMood.title,
+      moodEmoji: matchedMood.emoji,
+      aiMessage: matchedMood.aiMessage,
+      query: q,
+      results: enriched
+    });
+  }
+
+  // 2. Direct Keyword Match Search (Comedians, Titles, Show Names)
   const searchPattern = `%${q}%`;
   const videos = dbAll(`
-    SELECT v.*, c.name as comedian_name 
+    SELECT DISTINCT v.*, c.name as comedian_name 
     FROM videos v 
     JOIN comedians c ON v.comedian_id = c.comedian_id 
-    WHERE v.title LIKE ? OR c.name LIKE ?
-  `, [searchPattern, searchPattern]);
-  res.json(videos);
+    WHERE v.title LIKE ? OR c.name LIKE ? OR v.video_id IN (
+      SELECT vt.video_id FROM video_tags vt JOIN tags t ON vt.tag_id = t.tag_id WHERE t.tag_name LIKE ?
+    )
+    ORDER BY v.view_count DESC
+    LIMIT 30
+  `, [searchPattern, searchPattern, searchPattern]);
+
+  const enriched = videos.map(video => {
+    video.tags = dbAll('SELECT t.tag_name, t.tag_type FROM video_tags vt JOIN tags t ON vt.tag_id = t.tag_id WHERE vt.video_id = ?', [video.video_id]);
+    return video;
+  });
+
+  res.json({
+    isAiMood: false,
+    query: q,
+    results: enriched
+  });
 }));
 
 app.get('/api/shows', asyncHandler(async (req, res) => {
@@ -1275,6 +1418,38 @@ app.get('/api/user/ratings', authenticate, asyncHandler(async (req, res) => {
       `, [profileId]);
 
   res.json(ratings);
+}));
+
+app.get('/api/user/liked-videos', authenticate, asyncHandler(async (req, res) => {
+  const profileId = req.headers['x-profile-id'] || req.user.userId;
+  const isDefaultProfile = profileId === req.user.userId || profileId.endsWith('-default-profile');
+
+  const query = isDefaultProfile
+    ? `
+        SELECT DISTINCT v.*, c.name as comedian_name, r.rating, r.rated_at, 1 as is_liked
+        FROM user_ratings r
+        JOIN videos v ON r.video_id = v.video_id
+        JOIN comedians c ON v.comedian_id = c.comedian_id
+        WHERE (r.user_id = ? OR r.user_id = ?) AND r.rating >= 4
+        ORDER BY r.rated_at DESC
+      `
+    : `
+        SELECT DISTINCT v.*, c.name as comedian_name, r.rating, r.rated_at, 1 as is_liked
+        FROM user_ratings r
+        JOIN videos v ON r.video_id = v.video_id
+        JOIN comedians c ON v.comedian_id = c.comedian_id
+        WHERE r.user_id = ? AND r.rating >= 4
+        ORDER BY r.rated_at DESC
+      `;
+
+  const liked = isDefaultProfile ? dbAll(query, [profileId, req.user.userId]) : dbAll(query, [profileId]);
+
+  const enriched = liked.map(video => {
+    video.tags = dbAll('SELECT t.tag_name, t.tag_type FROM video_tags vt JOIN tags t ON vt.tag_id = t.tag_id WHERE vt.video_id = ?', [video.video_id]);
+    return video;
+  });
+
+  res.json(enriched);
 }));
 
 app.post('/api/user/ratings', authenticate, asyncHandler(async (req, res) => {
