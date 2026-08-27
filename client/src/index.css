@@ -5634,4 +5634,32 @@ input:checked + .toggle-slider:before {
   letter-spacing: 0.5px;
 }
 
+/* Netflix-Accurate Profiles & Avatars */
+.settings-hover-row {
+  transition: background-color 0.18s ease, transform 0.18s ease;
+}
+.settings-hover-row:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.profile-avatar-large-hover {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.profile-avatar-large-hover:hover {
+  transform: scale(1.04);
+  border-color: #ffffff !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+}
+
+.netflix-avatar-square-card {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.netflix-avatar-square-card:hover {
+  transform: scale(1.08);
+  border-color: #ffffff !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+  z-index: 2;
+}
+
+
 

@@ -208,7 +208,6 @@ export function getDotSeparatedTopics(video) {
   if (!video) return ['Stand-Up', 'Relatable', 'Hindi Comedy'];
   const topics = [];
   
-  // Extract topics from video title keywords
   const title = (video.title || '').toLowerCase();
   if (title.includes('upsc') || title.includes('college') || title.includes('hostel')) topics.push('College Life');
   else if (title.includes('cheating') || title.includes('school')) topics.push('School Days');
@@ -216,7 +215,6 @@ export function getDotSeparatedTopics(video) {
   else if (title.includes('roast') || title.includes('brocode')) topics.push('Roast Battle');
   else if (title.includes('relationship') || title.includes('dating') || title.includes('marriage')) topics.push('Relationships');
 
-  // Extract from tags
   const tags = video.tags || [];
   tags.forEach(t => {
     if (topics.length < 3) {
@@ -225,7 +223,6 @@ export function getDotSeparatedTopics(video) {
     }
   });
 
-  // Extract from moods
   const moods = getVideoMoods(video);
   moods.forEach(m => {
     if (topics.length < 3 && !topics.includes(m)) topics.push(m);
@@ -238,37 +235,51 @@ export function getDotSeparatedTopics(video) {
   return topics.slice(0, 3);
 }
 
+// 1. Top Comedian Avatars (Illustrated & Photographic)
 export const COMEDIAN_AVATARS = [
-  { id: 'zakir', name: 'Zakir Khan', url: '/images/comedians/zakir_khan.jpg' },
-  { id: 'samay', name: 'Samay Raina', url: '/images/comedians/samay_raina.jpg' },
-  { id: 'bassi', name: 'Anubhav Singh Bassi', url: '/images/comedians/anubhav_singh_bassi.jpg' },
-  { id: 'upmanyu', name: 'Abhishek Upmanyu', url: '/images/comedians/abhishek_upmanyu.jpg' },
-  { id: 'aakash', name: 'Aakash Gupta', url: '/images/comedians/aakash_gupta.jpg' },
-  { id: 'gaurav', name: 'Gaurav Kapoor', url: '/images/comedians/gaurav_kapoor.jpg' },
-  { id: 'munawar', name: 'Munawar Faruqui', url: '/images/comedians/munawar_faruqui.jpg' },
-  { id: 'rahul-sub', name: 'Rahul Subramanian', url: '/images/comedians/rahul_subramanian.jpg' },
-  { id: 'prashasti', name: 'Prashasti Singh', url: '/images/comedians/prashasti_singh.jpg' },
-  { id: 'biswa', name: 'Biswa Kalyan Rath', url: '/images/comedians/biswa_kalyan_rath.jpg' },
-  { id: 'kenny', name: 'Kenny Sebastian', url: '/images/comedians/kenny_sebastian.jpg' },
-  { id: 'kanan', name: 'Kanan Gill', url: '/images/comedians/kanan_gill.jpg' },
-  { id: 'swati', name: 'Swati Sachdeva', url: '/images/comedians/swati_sachdeva.jpg' },
-  { id: 'kunal', name: 'Kunal Kamra', url: '/images/comedians/kunal_kamra.jpg' },
-  { id: 'harsh', name: 'Harsh Gujral', url: '/images/comedians/harsh_gujral.jpg' },
-  { id: 'gurleen', name: 'Gurleen Pannu', url: '/images/comedians/gurleen_pannu.jpg' },
-  { id: 'shashi', name: 'Shashi Dhiman', url: '/images/comedians/shashi_dhiman.jpg' },
-  { id: 'amit', name: 'Amit Tandon', url: '/images/comedians/amit_tandon.jpg' },
-  { id: 'jaspreet', name: 'Jaspreet Singh', url: '/images/comedians/jaspreet_singh.jpg' }
+  { id: 'zakir', name: 'Zakir Khan', category: 'comedians', url: '/images/comedians/zakir_khan.jpg' },
+  { id: 'samay', name: 'Samay Raina', category: 'comedians', url: '/images/comedians/samay_raina.jpg' },
+  { id: 'bassi', name: 'Anubhav Singh Bassi', category: 'comedians', url: '/images/comedians/anubhav_singh_bassi.jpg' },
+  { id: 'upmanyu', name: 'Abhishek Upmanyu', category: 'comedians', url: '/images/comedians/abhishek_upmanyu.jpg' },
+  { id: 'aakash', name: 'Aakash Gupta', category: 'comedians', url: '/images/comedians/aakash_gupta.jpg' },
+  { id: 'gaurav', name: 'Gaurav Kapoor', category: 'comedians', url: '/images/comedians/gaurav_kapoor.jpg' },
+  { id: 'munawar', name: 'Munawar Faruqui', category: 'comedians', url: '/images/comedians/munawar_faruqui.jpg' },
+  { id: 'rahul-sub', name: 'Rahul Subramanian', category: 'comedians', url: '/images/comedians/rahul_subramanian.jpg' },
+  { id: 'prashasti', name: 'Prashasti Singh', category: 'comedians', url: '/images/comedians/prashasti_singh.jpg' },
+  { id: 'biswa', name: 'Biswa Kalyan Rath', category: 'comedians', url: '/images/comedians/biswa_kalyan_rath.jpg' },
+  { id: 'kenny', name: 'Kenny Sebastian', category: 'comedians', url: '/images/comedians/kenny_sebastian.jpg' },
+  { id: 'kanan', name: 'Kanan Gill', category: 'comedians', url: '/images/comedians/kanan_gill.jpg' },
+  { id: 'swati', name: 'Swati Sachdeva', category: 'comedians', url: '/images/comedians/swati_sachdeva.jpg' },
+  { id: 'kunal', name: 'Kunal Kamra', category: 'comedians', url: '/images/comedians/kunal_kamra.jpg' },
+  { id: 'harsh', name: 'Harsh Gujral', category: 'comedians', url: '/images/comedians/harsh_gujral.jpg' },
+  { id: 'gurleen', name: 'Gurleen Pannu', category: 'comedians', url: '/images/comedians/gurleen_pannu.jpg' },
+  { id: 'shashi', name: 'Shashi Dhiman', category: 'comedians', url: '/images/comedians/shashi_dhiman.jpg' },
+  { id: 'amit', name: 'Amit Tandon', category: 'comedians', url: '/images/comedians/amit_tandon.jpg' },
+  { id: 'jaspreet', name: 'Jaspreet Singh', category: 'comedians', url: '/images/comedians/jaspreet_singh.jpg' }
 ];
 
+// 2. Shows & Series Avatars
+export const SHOW_AVATARS = [
+  { id: 'lie-hard', name: 'Lie Hard', category: 'shows', url: 'https://images.unsplash.com/photo-1514306191717-452ec28c7814?w=200&auto=format&fit=crop&q=80' },
+  { id: 'relationshit', name: 'RelationSh!t', category: 'shows', url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=200&auto=format&fit=crop&q=80' },
+  { id: 'latent', name: 'Got Latent', category: 'shows', url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80' },
+  { id: 'akal-ghode', name: 'Akal Ke Ghode', category: 'shows', url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80' },
+  { id: 'roast', name: 'Pretty Good Roast', category: 'shows', url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80' },
+  { id: 'pitch-please', name: 'Pitch Please', category: 'shows', url: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=200&auto=format&fit=crop&q=80' }
+];
+
+// 3. Classic Netflix-style Illustrated Avatars (Dicebear Bots & Avatars)
 export const CLASSIC_AVATARS = [
-  { id: 'red-bot', name: 'StandUp+ Red', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=red-bot&backgroundColor=e50914' },
-  { id: 'yellow-bot', name: 'Gold Spark', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=yellow-bot&backgroundColor=f59e0b' },
-  { id: 'blue-bot', name: 'Cyber Blue', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=blue-bot&backgroundColor=3b82f6' },
-  { id: 'purple-bot', name: 'Neon Purple', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=purple-bot&backgroundColor=8b5cf6' },
-  { id: 'green-bot', name: 'Emerald Vibe', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=green-bot&backgroundColor=10b981' },
-  { id: 'pink-bot', name: 'Pink Glow', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=pink-bot&backgroundColor=ec4899' }
+  { id: 'red-bot', name: 'StandUp+ Red', category: 'classics', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=red-bot&backgroundColor=e50914' },
+  { id: 'blue-bot', name: 'Cyber Blue', category: 'classics', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=blue-bot&backgroundColor=3b82f6' },
+  { id: 'yellow-bot', name: 'Gold Spark', category: 'classics', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=yellow-bot&backgroundColor=f59e0b' },
+  { id: 'purple-bot', name: 'Neon Purple', category: 'classics', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=purple-bot&backgroundColor=8b5cf6' },
+  { id: 'green-bot', name: 'Emerald Vibe', category: 'classics', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=green-bot&backgroundColor=10b981' },
+  { id: 'pink-bot', name: 'Pink Glow', category: 'classics', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=pink-bot&backgroundColor=ec4899' },
+  { id: 'dark-bot', name: 'Midnight Shadow', category: 'classics', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=midnight&backgroundColor=1f2937' },
+  { id: 'teal-bot', name: 'Electric Teal', category: 'classics', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=electric-teal&backgroundColor=14b8a6' }
 ];
 
-export const ALL_AVATARS = [...COMEDIAN_AVATARS, ...CLASSIC_AVATARS];
+export const ALL_AVATARS = [...COMEDIAN_AVATARS, ...SHOW_AVATARS, ...CLASSIC_AVATARS];
 
 export const API_BASE = import.meta.env.VITE_API_URL || (typeof window !== 'undefined' && window.location.hostname !== 'localhost' ? '/api' : 'http://localhost:3001/api');

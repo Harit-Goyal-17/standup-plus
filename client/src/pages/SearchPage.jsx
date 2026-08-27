@@ -123,31 +123,35 @@ export default function SearchPage() {
 
         {/* AI Mood Quick Chips */}
         <div style={{ maxWidth: '800px', margin: '16px auto 0', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#e50914', fontSize: '0.82rem', fontWeight: 600, marginRight: '4px' }}>
-            <Sparkles size={14} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#ffffff', fontSize: '0.82rem', fontWeight: 600, marginRight: '4px' }}>
+            <Sparkles size={14} color="#ffffff" />
             <span>AI Moods:</span>
           </div>
-          {MOOD_CHIPS.map((chip, idx) => (
-            <button
-              key={idx}
-              onClick={() => handleChipClick(chip.query)}
-              style={{
-                background: query.toLowerCase().includes(chip.query.split(' ')[0]) ? 'rgba(229, 9, 20, 0.25)' : 'rgba(255, 255, 255, 0.06)',
-                border: query.toLowerCase().includes(chip.query.split(' ')[0]) ? '1px solid #e50914' : '1px solid rgba(255, 255, 255, 0.12)',
-                color: query.toLowerCase().includes(chip.query.split(' ')[0]) ? '#ffffff' : '#d1d5db',
-                borderRadius: '20px',
-                padding: '6px 14px',
-                fontSize: '0.82rem',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}
-            >
-              {chip.label}
-            </button>
-          ))}
+          {MOOD_CHIPS.map((chip, idx) => {
+            const isChipActive = query.toLowerCase().includes(chip.query.split(' ')[0]);
+            return (
+              <button
+                key={idx}
+                onClick={() => handleChipClick(chip.query)}
+                style={{
+                  background: isChipActive ? '#ffffff' : 'rgba(255, 255, 255, 0.06)',
+                  border: isChipActive ? '1px solid #ffffff' : '1px solid rgba(255, 255, 255, 0.14)',
+                  color: isChipActive ? '#000000' : '#d1d5db',
+                  fontWeight: isChipActive ? 600 : 400,
+                  borderRadius: '20px',
+                  padding: '6px 14px',
+                  fontSize: '0.82rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                {chip.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -158,11 +162,11 @@ export default function SearchPage() {
         </div>
       )}
       
-      {/* AI Mood Match Banner */}
+      {/* AI Mood Match Banner (Subtle, Premium Bold White / Grey Glassmorphism) */}
       {!loading && aiMoodData && results.length > 0 && (
         <div style={{ 
-          background: 'linear-gradient(90deg, rgba(229, 9, 20, 0.15) 0%, rgba(20, 20, 30, 0.6) 100%)', 
-          border: '1px solid rgba(229, 9, 20, 0.4)', 
+          background: 'rgba(255, 255, 255, 0.04)', 
+          border: '1.5px solid rgba(255, 255, 255, 0.25)', 
           borderRadius: '12px', 
           padding: '18px 24px', 
           marginBottom: '28px',
@@ -178,7 +182,7 @@ export default function SearchPage() {
             </div>
             <div>
               <div style={{ color: '#ffffff', fontWeight: 600, fontSize: '1.05rem', marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Sparkles size={16} color="#e50914" />
+                <Sparkles size={16} color="#ffffff" />
                 <span>AI Mood Match: {aiMoodData.moodTitle}</span>
               </div>
               <p style={{ color: '#d1d5db', fontSize: '0.9rem', margin: 0, lineHeight: 1.4 }}>
@@ -187,7 +191,7 @@ export default function SearchPage() {
             </div>
           </div>
 
-          <span style={{ background: 'rgba(255, 255, 255, 0.1)', color: '#ffffff', padding: '4px 12px', borderRadius: '12px', fontSize: '0.82rem', fontWeight: 600 }}>
+          <span style={{ background: 'rgba(255, 255, 255, 0.1)', border: '1px solid rgba(255, 255, 255, 0.18)', color: '#ffffff', padding: '4px 12px', borderRadius: '12px', fontSize: '0.82rem', fontWeight: 600 }}>
             {results.length} Curated Sets
           </span>
         </div>

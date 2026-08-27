@@ -1,23 +1,52 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { ShieldCheck, User, Users, Lock, Check, Save, Sparkles, RefreshCw, CreditCard, History, ChevronRight, AlertCircle, LogOut } from 'lucide-react';
-import { API_BASE, COMEDIAN_AVATARS, CLASSIC_AVATARS, ALL_AVATARS, cleanHandle } from '../utils';
+import { 
+  ArrowLeft, 
+  Pencil, 
+  Plus, 
+  ChevronRight, 
+  ShieldCheck, 
+  Lock, 
+  Check, 
+  History, 
+  CreditCard, 
+  LogOut, 
+  Trash2, 
+  Eye, 
+  EyeOff,
+  Sparkles
+} from 'lucide-react';
+import { 
+  API_BASE, 
+  COMEDIAN_AVATARS, 
+  SHOW_AVATARS, 
+  CLASSIC_AVATARS, 
+  ALL_AVATARS, 
+  cleanHandle 
+} from '../utils';
 
 export default function ProfilePage() {
   const { user, token, activeProfile, selectProfile, profiles, setProfiles, logout, loading } = useAuth();
   const navigate = useNavigate();
   
-  const [activeTab, setActiveTab] = useState('edit'); // 'edit' | 'security' | 'profiles' | 'plan' | 'activity'
-  const [profileName, setProfileName] = useState(activeProfile?.name || '');
-  const [avatarUrl, setAvatarUrl] = useState(activeProfile?.avatar_url || CLASSIC_AVATARS[0].url);
-  const [avatarCategory, setAvatarCategory] = useState('classics'); // 'classics' | 'comedians'
-  const [isLocked, setIsLocked] = useState(Boolean(activeProfile?.is_locked));
+  // Navigation View Modes: 'overview' | 'edit' | 'avatars' | 'security' | 'activity'
+  const [pageView, setPageView] = useState('overview');
+  const [editingProfile, setEditingProfile] = useState(null);
+
+  // Form Fields for Editing Profile
+  const [profileName, setProfileName] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState('');
+  const [isLocked, setIsLocked] = useState(false);
   const [pin, setPin] = useState('');
+  const [showPin, setShowPin] = useState(false);
+  
+  // States
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState('');
-  const [watchCount, setWatchCount] = useState(0);
+  const [watchHistory, setWatchHistory] = useState([]);
+  const [fetchingHistory, setFetchingHistory] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -25,16 +54,19 @@ export default function ProfilePage() {
     }
   }, [user, loading, navigate]);
 
+  // Load active profile into edit state
   useEffect(() => {
-    if (activeProfile) {
+    if (activeProfile && !editingProfile) {
       setProfileName(activeProfile.name || '');
       setAvatarUrl(activeProfile.avatar_url || CLASSIC_AVATARS[0].url);
       setIsLocked(Boolean(activeProfile.is_locked));
     }
-  }, [activeProfile]);
+  }, [activeProfile, editingProfile]);
 
-  useEffect(() => {
+  // Fetch watch history for viewing activity
+  const loadWatchHistory = () => {
     if (token) {
+      setFetchingHistory(true);
       fetch(`${API_BASE}/user/watch-history`, {
         headers: { 
           'Authorization': `Bearer ${token}`,
@@ -43,11 +75,48 @@ export default function ProfilePage() {
       })
       .then(res => res.json())
       .then(data => {
-        if (Array.isArray(data)) setWatchCount(data.length);
+        setWatchHistory(Array.isArray(data) ? data : []);
+        setFetchingHistory(false);
       })
-      .catch(() => {});
+      .catch(() => setFetchingHistory(false));
     }
-  }, [token, activeProfile?.profile_id]);
+  };
+
+  const handleStartEdit = (p) => {
+    const target = p || activeProfile;
+    setEditingProfile(target);
+    setProfileName(target.name || '');
+    setAvatarUrl(target.avatar_url || CLASSIC_AVATARS[0].url);
+    setIsLocked(Boolean(target.is_locked));
+    setPin('');
+    setSaveError('');
+    setPageView('edit');
+  };
+
+  const handleCreateNewProfile = () => {
+    if (profiles.length >= 5) {
+      alert('You have reached the maximum limit of 5 profiles per account.');
+      return;
+    }
+    const newTemp = {
+      profile_id: null,
+      name: `Profile ${profiles.length + 1}`,
+      avatar_url: ALL_AVATARS[profiles.length % ALL_AVATARS.length].url,
+      is_locked: false
+    };
+    setEditingProfile(newTemp);
+    setProfileName(newTemp.name);
+    setAvatarUrl(newTemp.avatar_url);
+    setIsLocked(false);
+    setPin('');
+    setSaveError('');
+    setPageView('edit');
+  };
+
+  const handleSelectAvatar = (url) => {
+    setAvatarUrl(url);
+    setPageView('edit');
+  };
 
   const handleSaveProfile = async (e) => {
     if (e) e.preventDefault();
@@ -65,8 +134,9 @@ export default function ProfilePage() {
     setSaveError('');
 
     try {
-      if (activeProfile) {
-        const res = await fetch(`${API_BASE}/profiles/${activeProfile.profile_id}`, {
+      if (editingProfile && editingProfile.profile_id) {
+        // Update existing profile
+        const res = await fetch(`${API_BASE}/profiles/${editingProfile.profile_id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -76,21 +146,23 @@ export default function ProfilePage() {
             name: profileName.trim(),
             avatar_url: avatarUrl,
             is_locked: isLocked,
-            pin: isLocked ? pin : null
+            pin: isLocked && pin ? pin : (isLocked ? undefined : null)
           })
         });
 
         if (res.ok) {
           const updated = await res.json();
-          selectProfile(updated);
           setProfiles(profiles.map(p => p.profile_id === updated.profile_id ? updated : p));
-          setSaveSuccess(true);
-          setTimeout(() => setSaveSuccess(false), 3000);
+          if (activeProfile?.profile_id === updated.profile_id) {
+            selectProfile(updated);
+          }
+          setPageView('overview');
         } else {
           const errData = await res.json();
           setSaveError(errData.error || 'Failed to update profile');
         }
       } else {
+        // Create new profile
         const res = await fetch(`${API_BASE}/profiles`, {
           method: 'POST',
           headers: {
@@ -107,341 +179,660 @@ export default function ProfilePage() {
 
         if (res.ok) {
           const created = await res.json();
-          selectProfile(created);
           setProfiles([...profiles, created]);
-          setSaveSuccess(true);
-          setTimeout(() => setSaveSuccess(false), 3000);
+          setPageView('overview');
         } else {
           const errData = await res.json();
           setSaveError(errData.error || 'Failed to create profile');
         }
       }
-    } catch(err) {
-      console.error('Error saving profile:', err);
-      setSaveError('Network error while saving profile');
+    } catch (err) {
+      setSaveError('Connection error saving profile');
     } finally {
       setIsSaving(false);
     }
   };
 
-  if (loading || !user) return <div style={{ padding: 40, textAlign: 'center' }}>Loading...</div>;
+  const handleDeleteProfile = async () => {
+    if (!editingProfile?.profile_id) {
+      setPageView('overview');
+      return;
+    }
 
-  return (
-    <div className="profile-settings-page">
-      {/* Top Header */}
-      <div className="profile-settings-header">
-        <div>
-          <h1 style={{ fontSize: '1.8rem', fontWeight: 500, color: '#ffffff', marginBottom: 6 }}>Account & Settings</h1>
-          <p style={{ color: '#9ca3af', fontSize: '0.9rem', fontWeight: 400 }}>Manage your profile, avatars, security and membership plan</p>
-        </div>
-        <div className="profile-settings-top-actions">
-          <button 
-            className="btn-secondary profile-action-btn"
-            onClick={() => selectProfile(null)}
-            title="Switch to profile gate"
+    if (profiles.length <= 1) {
+      alert('You cannot delete the only profile on your account.');
+      return;
+    }
+
+    if (!window.confirm(`Are you sure you want to delete profile "${editingProfile.name}"? Watch history for this profile will be permanently removed.`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE}/profiles/${editingProfile.profile_id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (res.ok) {
+        const remaining = profiles.filter(p => p.profile_id !== editingProfile.profile_id);
+        setProfiles(remaining);
+        if (activeProfile?.profile_id === editingProfile.profile_id) {
+          selectProfile(remaining[0]);
+        }
+        setPageView('overview');
+      }
+    } catch (err) {
+      alert('Failed to delete profile');
+    }
+  };
+
+  if (loading || !user) {
+    return (
+      <div style={{ paddingTop: '120px', minHeight: '80vh', textAlign: 'center', color: '#9ca3af' }}>
+        <div className="skeleton" style={{ width: 200, height: 32, margin: '0 auto 20px', borderRadius: 6 }} />
+        <span>Loading your account & profiles...</span>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // VIEW 1: PROFILES OVERVIEW (SCREENSHOT 3)
+  // ==========================================
+  if (pageView === 'overview') {
+    return (
+      <div style={{ minHeight: '90vh', paddingTop: '100px', paddingBottom: '80px', maxWidth: '820px', margin: '0 auto', paddingLeft: '24px', paddingRight: '24px' }}>
+        {/* Back link */}
+        <button 
+          onClick={() => navigate('/')}
+          style={{ background: 'none', border: 'none', color: '#9ca3af', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.9rem', marginBottom: '24px', padding: 0 }}
+        >
+          <ArrowLeft size={18} />
+          <span>Back to StandUp+</span>
+        </button>
+
+        <h1 style={{ fontSize: '2.2rem', fontWeight: 600, color: '#ffffff', letterSpacing: '-0.5px', marginBottom: '4px' }}>
+          Profiles & Parental Controls
+        </h1>
+        <p style={{ color: '#9ca3af', fontSize: '0.95rem', marginBottom: '32px' }}>
+          Manage profiles, custom avatars, security PINs, and viewing permissions
+        </p>
+
+        {/* Top Control Cards */}
+        <div style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px', overflow: 'hidden', marginBottom: '36px' }}>
+          <div 
+            onClick={() => handleStartEdit(activeProfile)}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 24px', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', cursor: 'pointer', transition: 'background 0.2s' }}
+            className="settings-hover-row"
           >
-            <RefreshCw size={16} /> Switch Profile
-          </button>
-        </div>
-      </div>
-
-      {/* Structured Navigation Tabs */}
-      <div className="profile-tabs-nav">
-        <button 
-          className={`profile-tab-btn ${activeTab === 'edit' ? 'active' : ''}`}
-          onClick={() => setActiveTab('edit')}
-        >
-          <User size={18} />
-          <span>Edit Profile & Avatars</span>
-        </button>
-
-        <button 
-          className={`profile-tab-btn ${activeTab === 'security' ? 'active' : ''}`}
-          onClick={() => setActiveTab('security')}
-        >
-          <Lock size={18} />
-          <span>Security & PIN</span>
-        </button>
-
-        <button 
-          className={`profile-tab-btn ${activeTab === 'profiles' ? 'active' : ''}`}
-          onClick={() => setActiveTab('profiles')}
-        >
-          <Users size={18} />
-          <span>Profiles on Account ({profiles.length})</span>
-        </button>
-
-        <button 
-          className={`profile-tab-btn ${activeTab === 'plan' ? 'active' : ''}`}
-          onClick={() => setActiveTab('plan')}
-        >
-          <CreditCard size={18} />
-          <span>Membership & Plan</span>
-        </button>
-
-        <button 
-          className={`profile-tab-btn ${activeTab === 'activity' ? 'active' : ''}`}
-          onClick={() => setActiveTab('activity')}
-        >
-          <History size={18} />
-          <span>Viewing History ({watchCount})</span>
-        </button>
-      </div>
-
-      {/* Tab 1: Edit Active Profile */}
-      {activeTab === 'edit' && (
-        <div className="profile-tab-content-card">
-          <form onSubmit={handleSaveProfile}>
-            <div className="profile-edit-section">
-              <h2 className="profile-section-heading">Choose Avatar Icon</h2>
-              
-              {/* Avatar Type Pill Switcher */}
-              <div className="avatar-cat-pill-switch">
-                <button
-                  type="button"
-                  className={`avatar-cat-pill ${avatarCategory === 'comedians' ? 'active' : ''}`}
-                  onClick={() => setAvatarCategory('comedians')}
-                >
-                  🎭 Stand-Up Comedians ({COMEDIAN_AVATARS.length})
-                </button>
-                <button
-                  type="button"
-                  className={`avatar-cat-pill ${avatarCategory === 'classics' ? 'active' : ''}`}
-                  onClick={() => setAvatarCategory('classics')}
-                >
-                  🤖 Classic Avatars ({CLASSIC_AVATARS.length})
-                </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <ShieldCheck size={22} color="#9ca3af" />
+              <div>
+                <div style={{ color: '#ffffff', fontWeight: 500, fontSize: '1rem' }}>Adjust parental controls & maturity</div>
+                <div style={{ color: '#6b7280', fontSize: '0.84rem' }}>Set content maturity ratings, lock titles</div>
               </div>
+            </div>
+            <ChevronRight size={18} color="#6b7280" />
+          </div>
 
-              {/* Avatar Grid */}
-              <div className="avatar-selection-grid">
-                {(avatarCategory === 'comedians' ? COMEDIAN_AVATARS : CLASSIC_AVATARS).map((av, idx) => (
-                  <div
-                    key={idx}
-                    className={`avatar-option-item ${avatarUrl === av.url ? 'selected' : ''}`}
-                    onClick={() => setAvatarUrl(av.url)}
-                  >
+          <div 
+            onClick={() => { loadWatchHistory(); setPageView('activity'); }}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 24px', cursor: 'pointer', transition: 'background 0.2s' }}
+            className="settings-hover-row"
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <History size={22} color="#9ca3af" />
+              <div>
+                <div style={{ color: '#ffffff', fontWeight: 500, fontSize: '1rem' }}>Viewing activity & history</div>
+                <div style={{ color: '#6b7280', fontSize: '0.84rem' }}>Manage watch history, ratings, and saved comedy</div>
+              </div>
+            </div>
+            <ChevronRight size={18} color="#6b7280" />
+          </div>
+        </div>
+
+        {/* Section Heading */}
+        <h2 style={{ fontSize: '1.2rem', fontWeight: 600, color: '#ffffff', marginBottom: '16px' }}>
+          Profile settings
+        </h2>
+
+        {/* Profile List Rows */}
+        <div style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px', overflow: 'hidden', marginBottom: '20px' }}>
+          {profiles.map((p, idx) => {
+            const isCurrent = activeProfile?.profile_id === p.profile_id;
+            return (
+              <div
+                key={p.profile_id || idx}
+                onClick={() => handleStartEdit(p)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '16px 24px',
+                  borderBottom: idx < profiles.length - 1 ? '1px solid rgba(255, 255, 255, 0.08)' : 'none',
+                  cursor: 'pointer',
+                  transition: 'background 0.2s ease'
+                }}
+                className="settings-hover-row"
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
+                  {/* Square Avatar */}
+                  <div style={{ position: 'relative' }}>
                     <img 
-                      src={av.url} 
-                      alt={av.name} 
-                      className="avatar-img-circle"
-                      referrerPolicy="no-referrer"
+                      src={p.avatar_url || CLASSIC_AVATARS[0].url} 
+                      alt={p.name}
+                      style={{ width: '56px', height: '56px', borderRadius: '10px', objectFit: 'cover', background: '#1e293b' }} 
                     />
-                    {avatarUrl === av.url && (
-                      <div className="avatar-selected-badge">
-                        <Check size={14} color="#fff" />
+                    {p.is_locked && (
+                      <div style={{ position: 'absolute', bottom: -4, right: -4, background: '#111827', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '50%', padding: '3px' }}>
+                        <Lock size={10} color="#e50914" />
                       </div>
                     )}
                   </div>
-                ))}
+
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{ color: '#ffffff', fontWeight: 600, fontSize: '1.05rem' }}>{p.name}</span>
+                      {isCurrent && (
+                        <span style={{ background: 'rgba(255, 255, 255, 0.15)', color: '#ffffff', padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 500 }}>
+                          Now watching
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ color: '#6b7280', fontSize: '0.82rem', marginTop: '2px' }}>
+                      {p.is_locked ? '🔒 Profile Protected with 4-digit PIN' : 'All Maturity Ratings • Unlocked'}
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <ChevronRight size={18} color="#6b7280" />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Add Profile Button */}
+        <button
+          onClick={handleCreateNewProfile}
+          style={{
+            width: '100%',
+            padding: '16px',
+            background: 'rgba(255, 255, 255, 0.08)',
+            border: '1px solid rgba(255, 255, 255, 0.15)',
+            color: '#ffffff',
+            borderRadius: '10px',
+            fontSize: '1rem',
+            fontWeight: 600,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            transition: 'background 0.2s ease',
+            marginBottom: '40px'
+          }}
+        >
+          <Plus size={18} />
+          <span>Add Profile</span>
+        </button>
+
+        {/* Account Info Footer */}
+        <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+          <div>
+            <div style={{ color: '#9ca3af', fontSize: '0.85rem' }}>Signed in as:</div>
+            <div style={{ color: '#ffffff', fontWeight: 500, fontSize: '0.95rem' }}>{user.email || user.username}</div>
+          </div>
+          <button
+            onClick={logout}
+            style={{
+              background: 'transparent',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              color: '#9ca3af',
+              padding: '8px 18px',
+              borderRadius: '6px',
+              fontSize: '0.88rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            <LogOut size={16} />
+            <span>Sign Out</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // VIEW 2: EDIT PROFILE (SCREENSHOT 4)
+  // ==========================================
+  if (pageView === 'edit') {
+    return (
+      <div style={{ minHeight: '90vh', paddingTop: '100px', paddingBottom: '80px', maxWidth: '640px', margin: '0 auto', paddingLeft: '24px', paddingRight: '24px' }}>
+        <h1 style={{ fontSize: '2.4rem', fontWeight: 600, color: '#ffffff', letterSpacing: '-0.5px', marginBottom: '32px' }}>
+          {editingProfile?.profile_id ? 'Edit Profile' : 'Add Profile'}
+        </h1>
+
+        {saveError && (
+          <div style={{ background: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#f87171', padding: '12px 16px', borderRadius: '8px', marginBottom: '24px', fontSize: '0.9rem' }}>
+            {saveError}
+          </div>
+        )}
+
+        <form onSubmit={handleSaveProfile}>
+          {/* Top Avatar & Name Section */}
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '28px', marginBottom: '36px' }}>
+            {/* Square Avatar with Pencil Overlay */}
+            <div 
+              onClick={() => setPageView('avatars')}
+              style={{
+                position: 'relative',
+                width: '110px',
+                height: '110px',
+                borderRadius: '12px',
+                cursor: 'pointer',
+                overflow: 'hidden',
+                flexShrink: 0,
+                border: '2px solid rgba(255, 255, 255, 0.2)',
+                transition: 'transform 0.2s ease, border-color 0.2s ease'
+              }}
+              className="profile-avatar-large-hover"
+            >
+              <img 
+                src={avatarUrl || CLASSIC_AVATARS[0].url} 
+                alt="Profile Avatar" 
+                style={{ width: '100%', height: '100%', objectFit: 'cover', background: '#1e293b' }} 
+              />
+              {/* Pencil Badge Overlay */}
+              <div style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: 'rgba(0, 0, 0, 0.45)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '4px',
+                color: '#ffffff'
+              }}>
+                <Pencil size={22} />
+                <span style={{ fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Change</span>
               </div>
             </div>
 
-            <div className="profile-form-group" style={{ marginTop: 32 }}>
-              <label className="profile-form-label">Profile Display Name</label>
-              <input
+            {/* Profile Name Field */}
+            <div style={{ flex: 1 }}>
+              <label style={{ display: 'block', color: '#9ca3af', fontSize: '0.85rem', marginBottom: '8px' }}>
+                Profile Name
+              </label>
+              <input 
                 type="text"
-                className="profile-input-field"
                 value={profileName}
                 onChange={(e) => setProfileName(e.target.value)}
-                placeholder="Enter profile name"
+                placeholder="e.g. Harit"
                 required
+                style={{
+                  width: '100%',
+                  background: 'rgba(255, 255, 255, 0.06)',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  color: '#ffffff',
+                  padding: '14px 16px',
+                  borderRadius: '8px',
+                  fontSize: '1.05rem',
+                  outline: 'none',
+                  boxSizing: 'border-box'
+                }}
               />
             </div>
+          </div>
 
+          <div style={{ height: '1px', background: 'rgba(255, 255, 255, 0.08)', marginBottom: '32px' }} />
 
-
-            {saveSuccess && (
-              <div className="profile-save-toast">
-                <Check size={18} color="#10b981" /> Profile changes saved successfully!
-              </div>
-            )}
-
-            {saveError && (
-              <div className="profile-save-toast" style={{ color: '#ef4444', background: 'rgba(239, 68, 68, 0.12)', borderColor: 'rgba(239, 68, 68, 0.3)' }}>
-                <AlertCircle size={18} color="#ef4444" /> {saveError}
-              </div>
-            )}
-
-            <button 
-              type="submit" 
-              className="btn-primary profile-save-btn" 
-              style={{ marginTop: 28 }}
-              disabled={isSaving}
-            >
-              <Save size={18} /> {isSaving ? 'Saving Changes...' : 'Save Changes'}
-            </button>
-          </form>
-        </div>
-      )}
-
-      {/* Tab 1.5: Security & PIN */}
-      {activeTab === 'security' && (
-        <div className="profile-tab-content-card">
-          <h2 className="profile-section-heading">Security & PIN</h2>
-          <p className="profile-section-desc">Manage your profile lock and security settings.</p>
-
-          <div className="security-lock-card">
-            <div className="security-lock-status">
+          {/* Profile Security PIN Section */}
+          <div style={{ marginBottom: '36px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
               <div>
-                <div className="security-lock-label">
-                  <Lock size={18} color={isLocked ? "#e50914" : "#ffffff"} /> Profile Lock
+                <div style={{ color: '#ffffff', fontWeight: 600, fontSize: '1.05rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Lock size={16} color="#9ca3af" />
+                  <span>Profile Lock PIN</span>
                 </div>
-                <div className="security-lock-sublabel">
-                  {isLocked ? 'A PIN is required to access this profile.' : 'No PIN required to access this profile.'}
+                <div style={{ color: '#9ca3af', fontSize: '0.85rem', marginTop: '2px' }}>
+                  Require a 4-digit PIN to access this profile and view history
                 </div>
               </div>
-              <label className="toggle-switch">
-                <input
-                  type="checkbox"
-                  checked={isLocked}
-                  onChange={(e) => setIsLocked(e.target.checked)}
-                />
-                <span className="toggle-slider"></span>
-              </label>
+
+              {/* Toggle Switch */}
+              <button
+                type="button"
+                onClick={() => setIsLocked(!isLocked)}
+                style={{
+                  background: isLocked ? '#ffffff' : 'rgba(255, 255, 255, 0.15)',
+                  border: 'none',
+                  width: '48px',
+                  height: '26px',
+                  borderRadius: '13px',
+                  position: 'relative',
+                  cursor: 'pointer',
+                  transition: 'background 0.2s ease'
+                }}
+              >
+                <div style={{
+                  width: '20px',
+                  height: '20px',
+                  borderRadius: '50%',
+                  background: isLocked ? '#000000' : '#9ca3af',
+                  position: 'absolute',
+                  top: '3px',
+                  left: isLocked ? '25px' : '3px',
+                  transition: 'left 0.2s ease'
+                }} />
+              </button>
             </div>
 
             {isLocked && (
-              <>
-                <div className="security-pin-edit-section">
-                  <label className="profile-form-label">Update 4-Digit PIN</label>
-                  <input
-                    type="password"
+              <div style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.1)', padding: '16px', borderRadius: '8px', marginTop: '12px' }}>
+                <label style={{ display: 'block', color: '#d1d5db', fontSize: '0.85rem', marginBottom: '8px' }}>
+                  Enter 4-Digit Numeric PIN:
+                </label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', maxWidth: '240px' }}>
+                  <input 
+                    type={showPin ? 'text' : 'password'}
                     maxLength={4}
-                    className="pin-input-field"
-                    placeholder="••••"
                     value={pin}
                     onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
+                    placeholder="••••"
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.08)',
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      color: '#ffffff',
+                      padding: '10px 14px',
+                      borderRadius: '6px',
+                      fontSize: '1.2rem',
+                      letterSpacing: '4px',
+                      textAlign: 'center',
+                      width: '100%',
+                      outline: 'none'
+                    }}
                   />
-                  <div className="security-note">
-                    {activeProfile?.pin ? 'Enter a new 4-digit PIN to update, or leave blank to keep current PIN.' : 'Enter 4 numbers to set your PIN.'}
-                  </div>
-                </div>
-
-                <div className="security-actions">
-                  <button type="button" className="security-action-btn edit-pin" onClick={() => handleSaveProfile()}>
-                    Save PIN
-                  </button>
-                  <button type="button" className="security-action-btn delete-lock" onClick={() => { setIsLocked(false); setPin(''); handleSaveProfile(); }}>
-                    Remove Profile Lock
+                  <button
+                    type="button"
+                    onClick={() => setShowPin(!showPin)}
+                    style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', padding: '6px' }}
+                  >
+                    {showPin ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
-              </>
+              </div>
             )}
           </div>
-          
-          {saveSuccess && (
-            <div className="profile-save-toast">
-              <Check size={18} color="#10b981" /> Security changes saved successfully!
-            </div>
-          )}
-          {saveError && (
-            <div className="profile-save-toast" style={{ color: '#ef4444', background: 'rgba(239, 68, 68, 0.12)', borderColor: 'rgba(239, 68, 68, 0.3)' }}>
-              <AlertCircle size={18} color="#ef4444" /> {saveError}
-            </div>
-          )}
+
+          <div style={{ height: '1px', background: 'rgba(255, 255, 255, 0.08)', marginBottom: '32px' }} />
+
+          {/* Action Buttons (Solid White & Subtle Grey) */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+            <button
+              type="submit"
+              disabled={isSaving}
+              style={{
+                background: '#ffffff',
+                color: '#000000',
+                border: 'none',
+                padding: '12px 32px',
+                borderRadius: '6px',
+                fontSize: '1rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'opacity 0.2s'
+              }}
+            >
+              {isSaving ? 'Saving...' : 'Save'}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setPageView('overview')}
+              style={{
+                background: 'transparent',
+                color: '#9ca3af',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                padding: '12px 24px',
+                borderRadius: '6px',
+                fontSize: '1rem',
+                fontWeight: 500,
+                cursor: 'pointer'
+              }}
+            >
+              Cancel
+            </button>
+
+            {editingProfile?.profile_id && profiles.length > 1 && (
+              <button
+                type="button"
+                onClick={handleDeleteProfile}
+                style={{
+                  background: 'transparent',
+                  color: '#9ca3af',
+                  border: 'none',
+                  padding: '12px 18px',
+                  fontSize: '0.9rem',
+                  cursor: 'pointer',
+                  marginLeft: 'auto',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                <Trash2 size={16} />
+                <span>Delete Profile</span>
+              </button>
+            )}
+          </div>
+        </form>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // VIEW 3: AVATAR CATALOG (SCREENSHOT 5)
+  // ==========================================
+  if (pageView === 'avatars') {
+    return (
+      <div style={{ minHeight: '90vh', paddingTop: '100px', paddingBottom: '80px', maxWidth: '960px', margin: '0 auto', paddingLeft: '24px', paddingRight: '24px' }}>
+        {/* Top Back Header */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '32px' }}>
+          <button 
+            onClick={() => setPageView('edit')}
+            style={{ background: 'none', border: 'none', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '1rem', padding: 0 }}
+          >
+            <ArrowLeft size={20} />
+          </button>
+          <div>
+            <h1 style={{ fontSize: '2rem', fontWeight: 600, color: '#ffffff', margin: 0 }}>
+              Choose an Avatar
+            </h1>
+            <p style={{ color: '#9ca3af', fontSize: '0.9rem', margin: '4px 0 0' }}>
+              Select a stylized comedian portrait or classic streaming character
+            </p>
+          </div>
         </div>
-      )}
 
-      {/* Tab 2: Profiles on Account */}
-      {activeTab === 'profiles' && (
-        <div className="profile-tab-content-card">
-          <h2 className="profile-section-heading">Profiles on this Account</h2>
-          <p className="profile-section-desc">Click any profile to instantly switch or manage their security</p>
-
-          <div className="account-profiles-stack">
-            {profiles.map(p => {
-              const isActive = p.profile_id === activeProfile?.profile_id;
+        {/* Category 1: Top Stand-Up Comedians */}
+        <div style={{ marginBottom: '44px' }}>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#ffffff', marginBottom: '16px' }}>
+            Top Stand-Up Comedians
+          </h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(96px, 1fr))', gap: '16px' }}>
+            {COMEDIAN_AVATARS.map((av) => {
+              const isSelected = avatarUrl === av.url;
               return (
-                <div 
-                  key={p.profile_id} 
-                  className={`account-profile-item ${isActive ? 'current-active' : ''}`}
-                  onClick={() => selectProfile(p)}
+                <div
+                  key={av.id}
+                  onClick={() => handleSelectAvatar(av.url)}
+                  style={{
+                    position: 'relative',
+                    aspectRatio: '1/1',
+                    borderRadius: '10px',
+                    overflow: 'hidden',
+                    cursor: 'pointer',
+                    border: isSelected ? '3px solid #ffffff' : '2px solid transparent',
+                    background: '#1e293b',
+                    transition: 'transform 0.2s ease, border-color 0.2s ease'
+                  }}
+                  className="netflix-avatar-square-card"
+                  title={av.name}
                 >
-                  <img 
-                    src={p.avatar_url} 
-                    alt={p.name} 
-                    className="account-profile-thumb"
-                    referrerPolicy="no-referrer"
-                  />
-                  <div className="account-profile-details">
-                    <div className="account-profile-row-top">
-                      <span className="account-profile-name">{p.name}</span>
-                      {isActive && <span className="active-profile-pill">Current Active</span>}
+                  <img src={av.url} alt={av.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  {isSelected && (
+                    <div style={{ position: 'absolute', top: 4, right: 4, background: '#ffffff', color: '#000000', borderRadius: '50%', width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Check size={12} strokeWidth={3} />
                     </div>
-                    <div className="account-profile-meta">
-                      {Boolean(p.is_locked) ? (
-                        <span className="profile-lock-status locked"><Lock size={13} /> Locked with PIN</span>
-                      ) : (
-                        <span className="profile-lock-status unlocked">Unlocked</span>
-                      )}
-                    </div>
-                  </div>
-                  <ChevronRight size={20} color="#666" style={{ marginLeft: 'auto' }} />
+                  )}
                 </div>
               );
             })}
           </div>
+        </div>
 
-          <div style={{ marginTop: 28, display: 'flex', gap: 16 }}>
-            <button 
-              className="btn-secondary" 
-              onClick={() => selectProfile(null)}
-              style={{ padding: '10px 20px' }}
-            >
-              <Users size={16} /> Manage Profiles Screen
-            </button>
+        {/* Category 2: Original Comedy Shows */}
+        <div style={{ marginBottom: '44px' }}>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#ffffff', marginBottom: '16px' }}>
+            Comedy Shows & Specials
+          </h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(96px, 1fr))', gap: '16px' }}>
+            {SHOW_AVATARS.map((av) => {
+              const isSelected = avatarUrl === av.url;
+              return (
+                <div
+                  key={av.id}
+                  onClick={() => handleSelectAvatar(av.url)}
+                  style={{
+                    position: 'relative',
+                    aspectRatio: '1/1',
+                    borderRadius: '10px',
+                    overflow: 'hidden',
+                    cursor: 'pointer',
+                    border: isSelected ? '3px solid #ffffff' : '2px solid transparent',
+                    background: '#1e293b',
+                    transition: 'transform 0.2s ease, border-color 0.2s ease'
+                  }}
+                  className="netflix-avatar-square-card"
+                  title={av.name}
+                >
+                  <img src={av.url} alt={av.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  {isSelected && (
+                    <div style={{ position: 'absolute', top: 4, right: 4, background: '#ffffff', color: '#000000', borderRadius: '50%', width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Check size={12} strokeWidth={3} />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
-      )}
 
-      {/* Tab 3: Membership & Plan */}
-      {activeTab === 'plan' && (
-        <div className="profile-tab-content-card">
-          <h2 className="profile-section-heading">Membership Details</h2>
-          
-          <div className="membership-info-table">
-            <div className="membership-row">
-              <span className="membership-label">Account Email</span>
-              <span className="membership-val">{user?.email || 'haritgoyal2007@gmail.com'}</span>
-            </div>
-            <div className="membership-row">
-              <span className="membership-label">Account Owner</span>
-              <span className="membership-val">{user?.username || 'Harit'}</span>
-            </div>
-            <div className="membership-row">
-              <span className="membership-label">Current Plan</span>
-              <span className="membership-val highlight-red">StandUp+ Premium Ultra HD</span>
-            </div>
-            <div className="membership-row">
-              <span className="membership-label">Streaming Quality</span>
-              <span className="membership-val">4K Ultra HD + HDR & 1080p</span>
-            </div>
-            <div className="membership-row">
-              <span className="membership-label">Audio Fidelity</span>
-              <span className="membership-val">Dolby Atmos & Spatial Audio</span>
-            </div>
-            <div className="membership-row">
-              <span className="membership-label">Screens</span>
-              <span className="membership-val">4 Devices Simultaneously</span>
-            </div>
+        {/* Category 3: Classic Streaming Characters */}
+        <div style={{ marginBottom: '44px' }}>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#ffffff', marginBottom: '16px' }}>
+            Classic Illustrated Originals
+          </h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(96px, 1fr))', gap: '16px' }}>
+            {CLASSIC_AVATARS.map((av) => {
+              const isSelected = avatarUrl === av.url;
+              return (
+                <div
+                  key={av.id}
+                  onClick={() => handleSelectAvatar(av.url)}
+                  style={{
+                    position: 'relative',
+                    aspectRatio: '1/1',
+                    borderRadius: '10px',
+                    overflow: 'hidden',
+                    cursor: 'pointer',
+                    border: isSelected ? '3px solid #ffffff' : '2px solid transparent',
+                    background: '#1e293b',
+                    transition: 'transform 0.2s ease, border-color 0.2s ease'
+                  }}
+                  className="netflix-avatar-square-card"
+                  title={av.name}
+                >
+                  <img src={av.url} alt={av.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  {isSelected && (
+                    <div style={{ position: 'absolute', top: 4, right: 4, background: '#ffffff', color: '#000000', borderRadius: '50%', width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Check size={12} strokeWidth={3} />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
-      )}
+      </div>
+    );
+  }
 
-      {/* Tab 4: Viewing Activity Link */}
-      {activeTab === 'activity' && (
-        <div className="profile-tab-content-card">
-          <h2 className="profile-section-heading">Viewing Activity for {activeProfile?.name}</h2>
-          <p className="profile-section-desc">You have watched {watchCount} standup comedy specials on this profile.</p>
+  // ==========================================
+  // VIEW 4: VIEWING ACTIVITY & HISTORY
+  // ==========================================
+  if (pageView === 'activity') {
+    return (
+      <div style={{ minHeight: '90vh', paddingTop: '100px', paddingBottom: '80px', maxWidth: '780px', margin: '0 auto', paddingLeft: '24px', paddingRight: '24px' }}>
+        <button 
+          onClick={() => setPageView('overview')}
+          style={{ background: 'none', border: 'none', color: '#9ca3af', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.9rem', marginBottom: '24px', padding: 0 }}
+        >
+          <ArrowLeft size={18} />
+          <span>Back to Profiles</span>
+        </button>
 
-          <div style={{ marginTop: 24 }}>
-            <Link to="/activity" className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '12px 24px' }}>
-              <History size={18} /> Open Full Viewing Activity
-            </Link>
+        <h1 style={{ fontSize: '2rem', fontWeight: 600, color: '#ffffff', marginBottom: '8px' }}>
+          Viewing Activity
+        </h1>
+        <p style={{ color: '#9ca3af', fontSize: '0.9rem', marginBottom: '28px' }}>
+          Recent stand-up sets and specials watched on {activeProfile?.name || 'this profile'}
+        </p>
+
+        {fetchingHistory ? (
+          <div style={{ textAlign: 'center', padding: '40px 0', color: '#9ca3af' }}>Loading activity...</div>
+        ) : watchHistory.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '60px 20px', background: 'rgba(255, 255, 255, 0.03)', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+            <p style={{ color: '#ffffff', fontSize: '1.1rem', marginBottom: '8px' }}>No watch activity yet</p>
+            <p style={{ color: '#9ca3af', fontSize: '0.88rem' }}>Videos you watch will appear here to easily continue where you left off.</p>
           </div>
-        </div>
-      )}
-    </div>
-  );
+        ) : (
+          <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '12px', overflow: 'hidden' }}>
+            {watchHistory.map((item, idx) => (
+              <div 
+                key={idx}
+                onClick={() => navigate(`/watch/${item.video_id}`)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '14px 20px',
+                  borderBottom: idx < watchHistory.length - 1 ? '1px solid rgba(255, 255, 255, 0.06)' : 'none',
+                  cursor: 'pointer'
+                }}
+                className="settings-hover-row"
+              >
+                <div>
+                  <div style={{ color: '#ffffff', fontWeight: 500, fontSize: '0.95rem' }}>{item.title}</div>
+                  <div style={{ color: '#6b7280', fontSize: '0.8rem' }}>{item.comedian_name}</div>
+                </div>
+                <ChevronRight size={16} color="#6b7280" />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return null;
 }
