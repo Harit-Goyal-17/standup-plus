@@ -235,8 +235,8 @@ export default function AuthModal() {
           </div>
         )}
 
-        {/* Google Login for Sign In & Initial Register */}
-        {authMode !== 'forgot' && !otpSent && (
+        {/* Google Login for Sign In & Initial Register (only when valid Client ID is configured) */}
+        {authMode !== 'forgot' && !otpSent && Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID && !import.meta.env.VITE_GOOGLE_CLIENT_ID.includes('dummy') && import.meta.env.VITE_GOOGLE_CLIENT_ID.includes('.apps.googleusercontent.com')) && (
           <>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
               <GoogleLogin 
