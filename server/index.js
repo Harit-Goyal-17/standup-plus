@@ -1071,6 +1071,32 @@ app.post('/api/sync/youtube', asyncHandler(async (req, res) => {
   res.json(result);
 }));
 
+// Support and Contact Ticket submission endpoint
+app.post('/api/support/contact', asyncHandler(async (req, res) => {
+  const { name, email, topic, message, userId } = req.body;
+  if (!email || !message) {
+    return res.status(400).json({ error: 'Email and message are required' });
+  }
+
+  const ticketId = 'SUP-' + Math.floor(100000 + Math.random() * 900000);
+  const now = new Date().toISOString();
+
+  dbRun(`
+    INSERT INTO support_messages (ticket_id, user_id, name, email, topic, message, status, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, 'open', ?)
+  `, [ticketId, userId || null, name || 'Anonymous', email, topic || 'General Inquiry', message, now]);
+
+  saveDb();
+
+  console.log(`[Support] 📩 New ticket created [${ticketId}] from ${email} (${name || 'Anonymous'}): ${topic} - ${message.slice(0, 60)}...`);
+
+  res.json({
+    success: true,
+    ticketId,
+    message: `Your message has been received! Ticket #${ticketId}. Our support team will follow up at ${email}.`
+  });
+}));
+
 // Serve static React build in production
 const clientDistPath = path.resolve(__dirname, '../client/dist');
 if (fs.existsSync(clientDistPath)) {
@@ -1101,6 +1127,21 @@ async function start() {
     // Ensure profiles schema has is_locked and pin columns
     try { db.run("ALTER TABLE profiles ADD COLUMN pin TEXT"); } catch(e) {}
     try { db.run("ALTER TABLE profiles ADD COLUMN is_locked INTEGER DEFAULT 0"); } catch(e) {}
+    try {
+      db.run(`
+        CREATE TABLE IF NOT EXISTS support_messages (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          ticket_id TEXT UNIQUE,
+          user_id TEXT,
+          name TEXT,
+          email TEXT,
+          topic TEXT,
+          message TEXT,
+          status TEXT DEFAULT 'open',
+          created_at TEXT
+        )
+      `);
+    } catch(e) {}
     saveDb();
 
     recommender = new Recommender(db);

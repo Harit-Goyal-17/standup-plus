@@ -1,42 +1,42 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Globe } from 'lucide-react';
+import { Globe, ShieldCheck } from 'lucide-react';
 
 export default function Footer() {
   return (
     <footer className="netflix-footer">
       <div className="footer-content">
         <p className="footer-contact">
-          Questions? Call <a href="tel:0008009191694">000-800-919-1694</a> (Toll-Free) or <Link to="/help">Contact Support</Link>
+          Questions or feedback? <Link to="/contact">Contact Support</Link> or visit our <Link to="/help">Help Centre</Link>
         </p>
 
         <div className="footer-links-grid">
           <ul className="footer-column">
-            <li><Link to="/help">FAQ</Link></li>
-            <li><Link to="/about">Investor Relations</Link></li>
+            <li><Link to="/help">FAQ & Help Centre</Link></li>
+            <li><Link to="/troubleshooting">Playback Troubleshooting</Link></li>
             <li><Link to="/privacy">Privacy Policy</Link></li>
-            <li><a href="https://fast.com" target="_blank" rel="noreferrer">Speed Test</a></li>
+            <li><Link to="/terms">Terms of Service</Link></li>
           </ul>
 
           <ul className="footer-column">
-            <li><Link to="/help">Help Centre</Link></li>
-            <li><Link to="/jobs">Jobs & Careers</Link></li>
+            <li><Link to="/shows">Shows & Series</Link></li>
+            <li><Link to="/browse">Browse Comedians</Link></li>
+            <li><Link to="/submissions">Artist Submissions</Link></li>
             <li><Link to="/cookies">Cookie Preferences</Link></li>
-            <li><Link to="/legal">Legal Notices</Link></li>
           </ul>
 
           <ul className="footer-column">
-            <li><Link to="/account">Account</Link></li>
-            <li><Link to="/devices">Ways to Watch</Link></li>
-            <li><Link to="/corporate">Corporate Information</Link></li>
-            <li><Link to="/shows">Only on StandUp+</Link></li>
+            <li><Link to="/profile">Account & Settings</Link></li>
+            <li><Link to="/profile">Profile PIN Lock</Link></li>
+            <li><Link to="/my-list">My Watchlist</Link></li>
+            <li><Link to="/activity">Viewing Activity</Link></li>
           </ul>
 
           <ul className="footer-column">
-            <li><Link to="/press">Media Centre</Link></li>
-            <li><Link to="/terms">Terms of Use</Link></li>
-            <li><Link to="/contact">Contact Us</Link></li>
-            <li><Link to="/browse">Featured Comedians</Link></li>
+            <li><Link to="/contact">Contact Support</Link></li>
+            <li><Link to="/contact?topic=technical">Report Playback Bug</Link></li>
+            <li><Link to="/contact?topic=comedian">Suggest a Special</Link></li>
+            <li><Link to="/about">About StandUp+</Link></li>
           </ul>
         </div>
 
@@ -44,18 +44,19 @@ export default function Footer() {
           <div className="footer-lang-select">
             <Globe size={15} />
             <select aria-label="Language selection" defaultValue="en">
-              <option value="en">English</option>
+              <option value="en">English (India)</option>
               <option value="hi">हिन्दी</option>
             </select>
           </div>
 
-          <button className="footer-service-code" onClick={() => alert('Service Code: 893-412')}>
-            Service Code
-          </button>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#9ca3af', fontSize: '0.82rem' }}>
+            <ShieldCheck size={14} color="#10b981" />
+            <span>Official Streaming Hub</span>
+          </div>
         </div>
 
-        <p className="footer-country">StandUp+ India — The Ultimate Stand-Up Comedy Streaming Hub</p>
-        <p className="footer-copyright">© 2026 StandUp+, Inc. All rights reserved.</p>
+        <p className="footer-country">StandUp+ India — The Ultimate Stand-Up Comedy Streaming Platform</p>
+        <p className="footer-copyright">© 2026 StandUp+, Inc. Curated with love for comedy fans worldwide.</p>
       </div>
     </footer>
   );
