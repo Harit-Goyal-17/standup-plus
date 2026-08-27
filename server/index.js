@@ -84,6 +84,101 @@ async function sendWelcomeEmail(toEmail, username) {
   }
 }
 
+const AUTHOR_EMAIL = 'haritgoyal2007@gmail.com';
+
+async function sendOTPEmail(toEmail, otp, purpose = 'Verification') {
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    console.log(`[OTP Notice] OTP for ${toEmail} (${purpose}): ${otp}`);
+    return;
+  }
+  try {
+    const isReset = purpose.toLowerCase().includes('password') || purpose === 'forgot_password';
+    await transporter.sendMail({
+      from: `"StandUp+ Security" <${process.env.EMAIL_USER}>`,
+      to: toEmail,
+      subject: isReset ? `🔐 ${otp} is your StandUp+ Password Reset OTP` : `✨ ${otp} is your StandUp+ Email Verification Code`,
+      html: `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #0a0a0f; color: #ffffff; padding: 40px 20px; text-align: center;">
+          <div style="max-width: 500px; margin: 0 auto; background: #14141c; border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; padding: 32px 24px;">
+            <div style="font-size: 28px; font-weight: 800; color: #e50914; margin-bottom: 8px;">StandUp+</div>
+            <h2 style="color: #ffffff; font-size: 20px; margin-bottom: 12px;">${isReset ? 'Reset Your Password' : 'Verify Your Email Address'}</h2>
+            <p style="color: #9ca3af; font-size: 14px; line-height: 1.5; margin-bottom: 24px;">
+              ${isReset 
+                ? 'We received a request to reset your StandUp+ account password. Use the 6-digit OTP code below to proceed.' 
+                : 'Thank you for creating an account on StandUp+! Enter the 6-digit verification code below to verify your email.'}
+            </p>
+            <div style="background: rgba(229, 9, 20, 0.1); border: 2px dashed #e50914; border-radius: 12px; padding: 18px 24px; font-size: 32px; font-weight: 800; letter-spacing: 6px; color: #ffffff; margin-bottom: 24px; display: inline-block;">
+              ${otp}
+            </div>
+            <p style="color: #6b7280; font-size: 12px; margin-bottom: 0;">
+              This code will expire in 10 minutes. If you did not request this code, please ignore this email.
+            </p>
+          </div>
+        </div>
+      `
+    });
+    console.log(`[Email Sent] OTP email dispatched to ${toEmail}`);
+  } catch (err) {
+    console.error('Error sending OTP email:', err);
+  }
+}
+
+async function sendSupportNotificationEmail(ticketId, name, email, topic, message, userId) {
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    console.log(`[Support Notice] Ticket #${ticketId} from ${email}: ${message}`);
+    return;
+  }
+  try {
+    // 1. Notify author (haritgoyal2007@gmail.com)
+    await transporter.sendMail({
+      from: `"StandUp+ Support Hub" <${process.env.EMAIL_USER}>`,
+      to: AUTHOR_EMAIL,
+      subject: `🎤 [StandUp+ Support #${ticketId}] ${topic} from ${name}`,
+      html: `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #0a0a0f; color: #ffffff; padding: 30px 20px;">
+          <div style="max-width: 600px; margin: 0 auto; background: #14141c; border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 24px;">
+            <h2 style="color: #e50914; margin-top: 0; font-size: 20px;">New StandUp+ User Feedback / Inquiry</h2>
+            <div style="background: rgba(255,255,255,0.04); border-radius: 8px; padding: 16px; margin: 16px 0; font-size: 14px; line-height: 1.6;">
+              <p style="margin: 4px 0;"><strong>Ticket ID:</strong> #${ticketId}</p>
+              <p style="margin: 4px 0;"><strong>From:</strong> ${name} (<a href="mailto:${email}" style="color: #e50914;">${email}</a>)</p>
+              <p style="margin: 4px 0;"><strong>Topic:</strong> ${topic}</p>
+              <p style="margin: 4px 0;"><strong>User ID:</strong> ${userId || 'Guest'}</p>
+              <p style="margin: 4px 0;"><strong>Received At:</strong> ${new Date().toLocaleString('en-IN')}</p>
+            </div>
+            <div style="background: rgba(255,255,255,0.06); border-left: 4px solid #e50914; padding: 16px; border-radius: 4px; font-size: 15px; line-height: 1.6; color: #f3f4f6;">
+              ${message.replace(/\n/g, '<br/>')}
+            </div>
+          </div>
+        </div>
+      `
+    });
+
+    // 2. Send confirmation to user
+    await transporter.sendMail({
+      from: `"StandUp+ Support" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: `[Ticket #${ticketId}] We have received your message - StandUp+`,
+      html: `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #0a0a0f; color: #ffffff; padding: 30px 20px; text-align: center;">
+          <div style="max-width: 500px; margin: 0 auto; background: #14141c; border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 28px 24px;">
+            <div style="font-size: 24px; font-weight: 800; color: #e50914; margin-bottom: 8px;">StandUp+</div>
+            <h2 style="color: #ffffff; font-size: 18px; margin-bottom: 12px;">Support Ticket #${ticketId} Logged</h2>
+            <p style="color: #9ca3af; font-size: 14px; line-height: 1.6; margin-bottom: 20px;">
+              Hi ${name}, thank you for reaching out to StandUp+ regarding <strong>${topic}</strong>. Our team has received your message and will follow up shortly.
+            </p>
+            <p style="color: #6b7280; font-size: 12px;">
+              Ticket Reference: #${ticketId} | StandUp+ Support Team
+            </p>
+          </div>
+        </div>
+      `
+    });
+    console.log(`[Support Email] Notification sent to author and confirmation sent to ${email}`);
+  } catch (err) {
+    console.error('Error sending support notification email:', err);
+  }
+}
+
 const dbPathAbsolute = path.resolve(__dirname, DB_PATH);
 
 let db;
@@ -611,16 +706,131 @@ function isValidEmail(email) {
   return true;
 }
 
+// Send OTP for Registration or Forgot Password
+app.post('/api/auth/send-otp', asyncHandler(async (req, res) => {
+  const { email, type } = req.body;
+  if (!email) return res.status(400).json({ error: 'Email address is required' });
+
+  const cleanEmail = email.trim().toLowerCase();
+  if (!isValidEmail(cleanEmail)) {
+    return res.status(400).json({ error: 'Please enter a valid email address (e.g. name@gmail.com)' });
+  }
+
+  const existingUser = dbGet('SELECT user_id FROM users WHERE LOWER(email) = ?', [cleanEmail]);
+  if (type === 'forgot_password' && !existingUser) {
+    return res.status(404).json({ error: 'No account found with this email address' });
+  }
+  if (type === 'registration' && existingUser) {
+    return res.status(400).json({ error: 'An account with this email address already exists. Please sign in.' });
+  }
+
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 mins
+
+  dbRun(`
+    INSERT INTO verification_otps (email, otp, type, expires_at)
+    VALUES (?, ?, ?, ?)
+    ON CONFLICT(email) DO UPDATE SET
+      otp = excluded.otp,
+      type = excluded.type,
+      expires_at = excluded.expires_at
+  `, [cleanEmail, otp, type || 'verification', expiresAt]);
+  saveDb();
+
+  await sendOTPEmail(cleanEmail, otp, type || 'Verification');
+
+  res.json({ success: true, message: `OTP code sent to ${cleanEmail}` });
+}));
+
+// Verify OTP
+app.post('/api/auth/verify-otp', asyncHandler(async (req, res) => {
+  const { email, otp } = req.body;
+  if (!email || !otp) return res.status(400).json({ error: 'Email and OTP are required' });
+
+  const cleanEmail = email.trim().toLowerCase();
+  const cleanOtp = otp.trim();
+
+  const record = dbGet('SELECT * FROM verification_otps WHERE LOWER(email) = ? AND otp = ?', [cleanEmail, cleanOtp]);
+  if (!record) {
+    return res.status(400).json({ error: 'Invalid 6-digit OTP code. Please check and try again.' });
+  }
+
+  if (new Date(record.expires_at) < new Date()) {
+    return res.status(400).json({ error: 'OTP has expired. Please request a new OTP code.' });
+  }
+
+  res.json({ success: true, verified: true });
+}));
+
+// Reset Password with OTP
+app.post('/api/auth/reset-password', asyncHandler(async (req, res) => {
+  const { email, otp, newPassword } = req.body;
+  if (!email || !otp || !newPassword) {
+    return res.status(400).json({ error: 'Email, OTP, and new password are required' });
+  }
+
+  const cleanEmail = email.trim().toLowerCase();
+  const cleanOtp = otp.trim();
+
+  const record = dbGet('SELECT * FROM verification_otps WHERE LOWER(email) = ? AND otp = ?', [cleanEmail, cleanOtp]);
+  if (!record) {
+    return res.status(400).json({ error: 'Invalid or expired OTP code' });
+  }
+
+  if (new Date(record.expires_at) < new Date()) {
+    return res.status(400).json({ error: 'OTP has expired. Please request a fresh OTP.' });
+  }
+
+  // Validate Password Complexity
+  const passRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/;
+  if (!passRegex.test(newPassword)) {
+    return res.status(400).json({ 
+      error: 'New password must be at least 8 characters and include at least one letter, one number, and one special character.' 
+    });
+  }
+
+  const user = dbGet('SELECT * FROM users WHERE LOWER(email) = ?', [cleanEmail]);
+  if (!user) {
+    return res.status(404).json({ error: 'User account not found' });
+  }
+
+  const newHash = bcrypt.hashSync(newPassword, 10);
+  dbRun('UPDATE users SET password_hash = ? WHERE user_id = ?', [newHash, user.user_id]);
+  dbRun('DELETE FROM verification_otps WHERE LOWER(email) = ?', [cleanEmail]);
+  saveDb();
+
+  let userProfiles = dbAll('SELECT profile_id, user_id, name, avatar_url, is_locked FROM profiles WHERE user_id = ?', [user.user_id]);
+  const token = jwt.sign({ userId: user.user_id, username: user.username }, JWT_SECRET);
+
+  res.json({ 
+    success: true, 
+    message: 'Password reset successfully! Logging you in...',
+    token,
+    user: { userId: user.user_id, username: user.username, email: user.email },
+    profile: userProfiles[0] || null,
+    profiles: userProfiles
+  });
+}));
+
 app.post('/api/auth/register', asyncHandler(async (req, res) => {
-  const { username, email, password } = req.body;
+  const { username, email, password, phone, otp } = req.body;
   if (!username || !email || !password) return res.status(400).json({ error: 'Missing required fields' });
 
   const cleanEmail = email.trim().toLowerCase();
   const cleanUsername = username.trim();
+  const cleanPhone = phone ? phone.trim() : null;
 
   // Strict Real Email Format & Typo Validation
   if (!isValidEmail(cleanEmail)) {
     return res.status(400).json({ error: 'Please enter a valid, real email address (e.g. name@gmail.com).' });
+  }
+
+  // Validate OTP if supplied
+  if (otp) {
+    const record = dbGet('SELECT * FROM verification_otps WHERE LOWER(email) = ? AND otp = ?', [cleanEmail, otp.trim()]);
+    if (!record || new Date(record.expires_at) < new Date()) {
+      return res.status(400).json({ error: 'Invalid or expired email verification OTP.' });
+    }
   }
 
   // Validate Password Complexity
@@ -639,9 +849,12 @@ app.post('/api/auth/register', asyncHandler(async (req, res) => {
   
   // 1. Create User
   dbRun(`
-    INSERT INTO users (user_id, username, email, password_hash, created_at)
-    VALUES (?, ?, ?, ?, ?)
-  `, [userId, cleanUsername, cleanEmail, hash, new Date().toISOString()]);
+    INSERT INTO users (user_id, username, email, password_hash, phone, created_at)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `, [userId, cleanUsername, cleanEmail, hash, cleanPhone, new Date().toISOString()]);
+
+  // Clean OTP
+  dbRun('DELETE FROM verification_otps WHERE LOWER(email) = ?', [cleanEmail]);
 
   // 2. Automatically create initial default profile with their chosen username and Classic Avatar
   const profileId = userId + '-' + Date.now();
@@ -661,7 +874,7 @@ app.post('/api/auth/register', asyncHandler(async (req, res) => {
 
   res.json({ 
     token, 
-    user: { userId, username: cleanUsername, email: cleanEmail }, 
+    user: { userId, username: cleanUsername, email: cleanEmail, phone: cleanPhone }, 
     profile: defaultProfile,
     profiles: [defaultProfile]
   });
@@ -669,12 +882,14 @@ app.post('/api/auth/register', asyncHandler(async (req, res) => {
 
 app.post('/api/auth/login', asyncHandler(async (req, res) => {
   const { email, password } = req.body;
-  if (!email || !password) return res.status(400).json({ error: 'Email and password are required' });
+  if (!email || !password) return res.status(400).json({ error: 'Email/Phone and password are required' });
 
-  const cleanEmail = email.trim().toLowerCase();
-  const user = dbGet('SELECT * FROM users WHERE LOWER(email) = ?', [cleanEmail]);
+  const cleanIdentifier = email.trim().toLowerCase();
+  
+  // Allow login by email OR by registered phone number
+  const user = dbGet('SELECT * FROM users WHERE LOWER(email) = ? OR phone = ?', [cleanIdentifier, cleanIdentifier]);
   if (!user || !bcrypt.compareSync(password, user.password_hash)) {
-    return res.status(401).json({ error: 'Invalid email or password' });
+    return res.status(401).json({ error: 'Invalid email/phone or password' });
   }
 
   // Ensure user has at least one profile
@@ -693,7 +908,7 @@ app.post('/api/auth/login', asyncHandler(async (req, res) => {
   const token = jwt.sign({ userId: user.user_id, username: user.username }, JWT_SECRET);
   res.json({ 
     token, 
-    user: { userId: user.user_id, username: user.username, email: user.email },
+    user: { userId: user.user_id, username: user.username, email: user.email, phone: user.phone },
     profile: userProfiles[0],
     profiles: userProfiles
   });
@@ -1090,10 +1305,13 @@ app.post('/api/support/contact', asyncHandler(async (req, res) => {
 
   console.log(`[Support] 📩 New ticket created [${ticketId}] from ${email} (${name || 'Anonymous'}): ${topic} - ${message.slice(0, 60)}...`);
 
+  // Send direct email to author (haritgoyal2007@gmail.com) and confirmation to user
+  sendSupportNotificationEmail(ticketId, name || 'Anonymous', email, topic || 'General Inquiry', message, userId);
+
   res.json({
     success: true,
     ticketId,
-    message: `Your message has been received! Ticket #${ticketId}. Our support team will follow up at ${email}.`
+    message: `Your message has been received! Ticket #${ticketId}. A confirmation has been sent to ${email}.`
   });
 }));
 
@@ -1127,6 +1345,17 @@ async function start() {
     // Ensure profiles schema has is_locked and pin columns
     try { db.run("ALTER TABLE profiles ADD COLUMN pin TEXT"); } catch(e) {}
     try { db.run("ALTER TABLE profiles ADD COLUMN is_locked INTEGER DEFAULT 0"); } catch(e) {}
+    try { db.run("ALTER TABLE users ADD COLUMN phone TEXT"); } catch(e) {}
+    try {
+      db.run(`
+        CREATE TABLE IF NOT EXISTS verification_otps (
+          email TEXT PRIMARY KEY,
+          otp TEXT,
+          type TEXT,
+          expires_at TEXT
+        )
+      `);
+    } catch(e) {}
     try {
       db.run(`
         CREATE TABLE IF NOT EXISTS support_messages (

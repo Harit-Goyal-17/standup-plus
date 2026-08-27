@@ -89,12 +89,12 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const register = async (username, email, password) => {
+  const register = async (username, email, password, phone = null, otp = null) => {
     try {
       const res = await fetch(`${API_BASE}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, email, password })
+        body: JSON.stringify({ username, email, password, phone, otp })
       });
       const data = await res.json();
       if (res.ok) {
@@ -116,6 +116,70 @@ export const AuthProvider = ({ children }) => {
       return { success: false, error: data.error || 'Registration failed' };
     } catch(e) {
       return { success: false, error: 'Network error' };
+    }
+  };
+
+  const sendOtp = async (email, type = 'verification') => {
+    try {
+      const res = await fetch(`${API_BASE}/auth/send-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, type })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        return { success: true, message: data.message };
+      }
+      return { success: false, error: data.error || 'Failed to send OTP' };
+    } catch(e) {
+      return { success: false, error: 'Network error sending OTP' };
+    }
+  };
+
+  const verifyOtp = async (email, otp) => {
+    try {
+      const res = await fetch(`${API_BASE}/auth/verify-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, otp })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        return { success: true, verified: true };
+      }
+      return { success: false, error: data.error || 'Invalid OTP code' };
+    } catch(e) {
+      return { success: false, error: 'Network error verifying OTP' };
+    }
+  };
+
+  const resetPassword = async (email, otp, newPassword) => {
+    try {
+      const res = await fetch(`${API_BASE}/auth/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, otp, newPassword })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setToken(data.token);
+        setUser(data.user);
+        localStorage.setItem('token', data.token);
+        
+        if (data.profiles && Array.isArray(data.profiles)) {
+          setProfiles(data.profiles);
+        }
+        if (data.profile) {
+          setActiveProfile(data.profile);
+          localStorage.setItem('activeProfileId', data.profile.profile_id);
+        }
+        
+        setAuthModalOpen(false);
+        return { success: true, message: data.message };
+      }
+      return { success: false, error: data.error || 'Failed to reset password' };
+    } catch(e) {
+      return { success: false, error: 'Network error resetting password' };
     }
   };
 
@@ -167,6 +231,7 @@ export const AuthProvider = ({ children }) => {
   return (
     <AuthContext.Provider value={{ 
       user, token, loading, login, register, loginWithGoogle, logout,
+      sendOtp, verifyOtp, resetPassword,
       isAuthModalOpen, setAuthModalOpen,
       profiles, setProfiles, activeProfile, selectProfile 
     }}>
