@@ -188,6 +188,9 @@ export default function VideoCard({ video, onClick, onRemoveFromRow, isInWatchli
               e.target.src = `https://i.ytimg.com/vi/${video.video_id}/mqdefault.jpg`;
             } else if (e.target.src.includes('mqdefault.jpg')) {
               e.target.src = `https://i.ytimg.com/vi/${video.video_id}/0.jpg`;
+            } else {
+              e.target.style.opacity = '0';
+              if (e.target.parentElement) e.target.parentElement.classList.add('fallback-thumb-bg');
             }
           }}
         />
@@ -230,6 +233,9 @@ export default function VideoCard({ video, onClick, onRemoveFromRow, isInWatchli
                   e.target.src = `https://i.ytimg.com/vi/${video.video_id}/mqdefault.jpg`;
                 } else if (e.target.src.includes('mqdefault.jpg')) {
                   e.target.src = `https://i.ytimg.com/vi/${video.video_id}/0.jpg`;
+                } else {
+                  e.target.style.opacity = '0';
+                  if (e.target.parentElement) e.target.parentElement.classList.add('fallback-thumb-bg');
                 }
               }}
             />

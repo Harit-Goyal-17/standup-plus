@@ -5618,3 +5618,20 @@ input:checked + .toggle-slider:before {
   font-size: 0.74rem;
 }
 
+.fallback-thumb-bg {
+  background: linear-gradient(135deg, #1f1f2e 0%, #12121a 100%) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: relative !important;
+}
+
+.fallback-thumb-bg::before {
+  content: '🎤 StandUp+';
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+

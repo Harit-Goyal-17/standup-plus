@@ -81,18 +81,35 @@ export default function HomePage() {
   };
 
   const profileDisplayName = activeProfile?.name || user?.username || 'You';
+  const recentlyAddedCategory = categories.find(c => c.isRecentlyAdded || c.title === 'Recently Added');
+  const otherCategories = categories.filter(c => !c.isRecentlyAdded && c.title !== 'Recently Added');
 
   return (
     <div className="home-page-layout">
       <HeroSection videos={featured} />
       
       <div className="home-rows-container">
-        {/* Row 1: Recommendations (if logged in) */}
+        {/* Row 1: Recently Added (Always at the very top so user immediately sees what is brand new) */}
+        {recentlyAddedCategory && recentlyAddedCategory.videos?.length > 0 && (
+          <VideoCarousel 
+            key="recently-added-top"
+            title="Recently Added" 
+            videos={recentlyAddedCategory.videos} 
+            onVideoClick={handleVideoClick} 
+            isRecentlyAdded={true}
+          />
+        )}
+
+        {/* Row 2: Your Next Watch (Personalized recommendations + fresh discovery mix) */}
         {user && recommendations.length > 0 && (
-          <VideoCarousel title="We Think You'll Love These" videos={recommendations} onVideoClick={handleVideoClick} />
+          <VideoCarousel 
+            title="Your Next Watch" 
+            videos={recommendations} 
+            onVideoClick={handleVideoClick} 
+          />
         )}
         
-        {/* Row 2: Continue Watching for active profile */}
+        {/* Row 3: Continue Watching for active profile */}
         {user && watchHistory.length > 0 && (
           <VideoCarousel 
             title={`Continue Watching for ${profileDisplayName}`} 
@@ -102,7 +119,7 @@ export default function HomePage() {
           />
         )}
 
-        {/* Row 3: Favorite Comedian (if applicable) */}
+        {/* Row 4: Favorite Comedian (if applicable) */}
         {user && favoriteComedianData?.videos?.length > 0 && (
           <VideoCarousel 
             title={`Because you like ${favoriteComedianData.comedian.name}`} 
@@ -111,7 +128,7 @@ export default function HomePage() {
           />
         )}
 
-        {/* Category Rows (Trending Now, Top 10 Specials, Top 10 Bits, Comedy Series, Recently Added, etc.) */}
+        {/* Remaining Category Rows (Top 10 Specials Today, Trending Now, Crowd Work, Dark Comedy, etc.) */}
         {loading ? (
           <div style={{ padding: '20px 4%' }}>
             <div className="skeleton" style={{ height: 30, width: 200, marginBottom: 20 }}></div>
@@ -120,7 +137,7 @@ export default function HomePage() {
             </div>
           </div>
         ) : (
-          categories.map(cat => (
+          otherCategories.map(cat => (
             cat.videos?.length > 0 && (
               <VideoCarousel 
                 key={cat.title} 

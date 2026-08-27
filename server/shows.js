@@ -126,7 +126,7 @@ export const SHOWS_CONFIG = [
     host: 'Raunaq Rajani',
     tagline: 'Solving romantic disasters with terrible, hilarious advice',
     description: 'Raunaq Rajani invites audience members to submit their real-life dating disasters while a panel of comics dishes out questionable but hilarious advice.',
-    match: ['relationsh!t advice', 'relationsh!t'],
+    match: ['relationsh!t advice', 'relationsh!t', 'relationshit advice', 'relationshit', 'relationsh'],
     category: 'Dating & Advice',
     badge: 'Relationship Comedy',
     rating: '16+'

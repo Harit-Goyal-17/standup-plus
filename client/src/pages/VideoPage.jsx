@@ -40,6 +40,7 @@ export default function VideoPage() {
   const progressPollIntervalRef = useRef(null);
   const countdownTimerRef = useRef(null);
   const countdownActiveRef = useRef(false);
+  const failedVideoIdsRef = useRef(new Set());
 
   const authHeaders = useMemo(() => ({
     'Content-Type': 'application/json',
@@ -222,6 +223,7 @@ export default function VideoPage() {
             // YT.PlayerState: PLAYING=1, PAUSED=2, ENDED=0
             if (event.data === 1) { // Playing
               setVideoRestrictedError(false);
+              failedVideoIdsRef.current.delete(videoId);
               startProgressTracker();
             } else if (event.data === 2) { // Paused
               stopProgressTracker();
@@ -235,6 +237,7 @@ export default function VideoPage() {
           onError: (event) => {
             console.warn(`YouTube Player restriction/playback error ${event.data} for video ${videoId}`);
             setVideoRestrictedError(true);
+            failedVideoIdsRef.current.add(videoId);
             triggerAutoplayCountdown(3);
           }
         }
@@ -296,19 +299,27 @@ export default function VideoPage() {
     };
   }, [videoId, startSeconds, user, token, authHeaders, video?.duration_seconds]);
 
-  // 4. Handle Autoplay Countdown
+  // 4. Handle Autoplay Countdown (Skips any known-broken videos)
   const triggerAutoplayCountdown = (initialSeconds = 10) => {
     if (!autoplayEnabled || countdownActiveRef.current) return;
     
-    // Resolve target next video reliably across all comics & specials
-    const candidates = [...moreLikeThis, ...comedianVideos].filter(v => v && v.video_id !== videoId);
-    let targetNext = nextVideo && nextVideo.video_id !== videoId ? nextVideo : (candidates.length > 0 ? candidates[0] : null);
+    // Resolve target next video reliably across all comics & specials, excluding failed ones
+    const candidates = [...moreLikeThis, ...comedianVideos].filter(
+      v => v && v.video_id !== videoId && !failedVideoIdsRef.current.has(v.video_id)
+    );
     
-    if (!targetNext && moreLikeThis.length > 0) {
-      targetNext = moreLikeThis.find(v => v.video_id !== videoId);
+    let targetNext = (nextVideo && nextVideo.video_id !== videoId && !failedVideoIdsRef.current.has(nextVideo.video_id))
+      ? nextVideo 
+      : (candidates.length > 0 ? candidates[0] : null);
+    
+    if (!targetNext && candidates.length > 0) {
+      targetNext = candidates[0];
     }
 
-    if (!targetNext) return;
+    if (!targetNext) {
+      console.log("No further playable videos found for autoplay.");
+      return;
+    }
 
     countdownActiveRef.current = true;
     setNextVideo(targetNext);
@@ -338,8 +349,17 @@ export default function VideoPage() {
   const handlePlayNextImmediately = () => {
     if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
     countdownActiveRef.current = false;
-    if (nextVideo) {
-      navigate(`/watch/${nextVideo.video_id}`);
+    
+    const candidates = [...moreLikeThis, ...comedianVideos].filter(
+      v => v && v.video_id !== videoId && !failedVideoIdsRef.current.has(v.video_id)
+    );
+    
+    const target = (nextVideo && nextVideo.video_id !== videoId && !failedVideoIdsRef.current.has(nextVideo.video_id)) 
+      ? nextVideo 
+      : (candidates.length > 0 ? candidates[0] : null);
+      
+    if (target) {
+      navigate(`/watch/${target.video_id}`);
     }
   };
 

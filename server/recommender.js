@@ -170,21 +170,40 @@ export class Recommender {
     // Sort by score descending
     scoredCandidates.sort((a, b) => b.score - a.score);
 
-    // Diversity Guarantee: Ensure at least top diverse comedians in top 12
+    // Diversity Guarantee: Ensure at least top diverse comedians in top results
     const finalSelection = [];
     const comedianCountInResult = {};
+
+    // 6. Serendipity / Discovery Pick (1-2 videos from comics user has not explored yet)
+    const userExploredComedians = new Set(Object.keys(comedianWeights).map(id => parseInt(id)));
+    const discoveryCandidates = candidates.filter(v => 
+      !userExploredComedians.has(v.comedian_id) && 
+      (v.view_count > 500000 || v.duration_seconds >= 600)
+    );
+    // Sort discovery candidates by recency & high views
+    discoveryCandidates.sort((a, b) => (b.view_count || 0) - (a.view_count || 0));
+    const discoveryPicks = discoveryCandidates.slice(0, 2);
 
     for (const item of scoredCandidates) {
       const cId = item.video.comedian_id;
       const currentCount = comedianCountInResult[cId] || 0;
 
-      // Maximum 2 videos per comedian in the top 12 recommendations to prevent single-artist takeover
+      // Maximum 2 videos per comedian to prevent single-artist takeover
       if (currentCount < 2) {
         finalSelection.push(item.video);
         comedianCountInResult[cId] = currentCount + 1;
       }
 
-      if (finalSelection.length >= limit) break;
+      // Reserve slots for discovery picks
+      if (finalSelection.length >= limit - discoveryPicks.length) break;
+    }
+
+    // Interleave discovery picks into the recommendation stream (at index 3 and 7)
+    if (discoveryPicks.length > 0 && finalSelection.length >= 3) {
+      finalSelection.splice(3, 0, discoveryPicks[0]);
+    }
+    if (discoveryPicks.length > 1 && finalSelection.length >= 7) {
+      finalSelection.splice(7, 0, discoveryPicks[1]);
     }
 
     // Backfill if needed

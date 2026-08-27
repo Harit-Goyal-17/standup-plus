@@ -1,12 +1,9 @@
-import dotenv from 'dotenv';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const fs = require('fs');
+const path = require('path');
+const dotenv = require('dotenv');
+const initSqlJs = require('sql.js');
 
 dotenv.config({ path: path.join(__dirname, '../.env') });
-
 const API_KEY = process.env.YOUTUBE_API_KEY ? process.env.YOUTUBE_API_KEY.trim() : '';
 
 const COMEDIAN_HANDLES = [
@@ -64,7 +61,7 @@ function detectContentType(title) {
     return 'episode';
   }
   if (lower.includes('roast')) return 'roast';
-  if (lower.includes('crowd work') || lower.includes('crowdwork')) return 'crowd_work';
+  if (lower.includes('crowd work') || lower.includes('crowdwork') || lower.includes('audience')) return 'crowd_work';
   return 'standup_bit';
 }
 
@@ -85,50 +82,53 @@ function parseDuration(pt) {
   return (h * 3600) + (m * 60) + s;
 }
 
-export async function syncComedianVideos(db, saveDb) {
-  if (!API_KEY) {
-    console.log('[YouTubeSync] No YOUTUBE_API_KEY found, skipping automated sync.');
-    return { synced: 0, message: 'No API key configured' };
-  }
+async function run() {
+  console.log('🚀 Fetching channel uploads for all top comedians...');
+  const SQL = await initSqlJs();
+  const dbPath = path.resolve(__dirname, '../../standup.db');
+  const buffer = fs.readFileSync(dbPath);
+  const db = new SQL.Database(buffer);
 
-  console.log('[YouTubeSync] 🔄 Starting automated channel uploads sync from YouTube...');
-  let totalNewVideos = 0;
-
-  const dbGet = (sql, params = []) => {
+  const query = (sql, params = []) => {
     const stmt = db.prepare(sql);
     stmt.bind(params);
-    const row = stmt.step() ? stmt.getAsObject() : null;
+    const rows = [];
+    while (stmt.step()) rows.push(stmt.getAsObject());
     stmt.free();
-    return row;
+    return rows;
   };
 
-  const dbRun = (sql, params = []) => {
+  const runSql = (sql, params = []) => {
     const stmt = db.prepare(sql);
     stmt.run(params);
     stmt.free();
   };
 
+  let totalNew = 0;
+
   for (const c of COMEDIAN_HANDLES) {
     try {
+      console.log(`\n🎭 Looking up handle @${c.handle} (${c.name})...`);
       const chRes = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=contentDetails&forHandle=${c.handle}&key=${API_KEY}`);
-      if (!chRes.ok) continue;
       const chData = await chRes.json();
       
-      if (!chData.items || chData.items.length === 0) continue;
+      if (!chData.items || chData.items.length === 0) {
+        console.warn(`  Handle @${c.handle} not found`);
+        continue;
+      }
+
       const uploadsId = chData.items[0].contentDetails?.relatedPlaylists?.uploads;
       if (!uploadsId) continue;
 
-      const plRes = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${uploadsId}&maxResults=15&key=${API_KEY}`);
-      if (!plRes.ok) continue;
+      const plRes = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${uploadsId}&maxResults=30&key=${API_KEY}`);
       const plData = await plRes.json();
 
       if (!plData.items || plData.items.length === 0) continue;
 
       const videoIds = plData.items.map(it => it.snippet?.resourceId?.videoId).filter(Boolean);
-      if (videoIds.length === 0) continue;
 
+      // Fetch video details in batch
       const detRes = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&id=${videoIds.join(',')}&key=${API_KEY}`);
-      if (!detRes.ok) continue;
       const detData = await detRes.json();
 
       for (const item of detData.items || []) {
@@ -144,51 +144,38 @@ export async function syncComedianVideos(db, saveDb) {
 
         if (!isStandup(title, desc)) continue;
 
-        const exists = dbGet('SELECT video_id FROM videos WHERE video_id = ?', [vidId]);
+        const exists = query(`SELECT video_id FROM videos WHERE video_id = ?`, [vidId]);
         const contentType = detectContentType(title);
         const rating = detectRating(title);
 
-        if (!exists) {
-          dbRun(`
+        if (exists.length === 0) {
+          runSql(`
             INSERT INTO videos (video_id, title, comedian_id, thumbnail_url, duration_seconds, view_count, like_count, published_at, suggested_rating, content_type)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `, [vidId, title, c.comedianId, thumb, duration, views, likes, publishedAt, rating, contentType]);
 
-          totalNewVideos++;
-          console.log(`[YouTubeSync] ✨ Ingested new video: [${vidId}] "${title}" (${c.name})`);
+          totalNew++;
+          console.log(`  ✨ Added: [${vidId}] "${title}" (${duration}s)`);
         } else {
-          dbRun(`
+          runSql(`
             UPDATE videos SET view_count = ?, like_count = ?, thumbnail_url = ?, duration_seconds = ?, content_type = ?
             WHERE video_id = ?
           `, [views, likes, thumb, duration, contentType, vidId]);
         }
       }
     } catch (err) {
-      console.warn(`[YouTubeSync] Sync note for ${c.name}:`, err.message);
+      console.warn(`  ⚠️ Error syncing ${c.name}:`, err.message);
     }
   }
 
-  if (totalNewVideos > 0 && typeof saveDb === 'function') {
-    saveDb();
-    console.log(`[YouTubeSync] ✅ Database updated and saved. Total new uploads: ${totalNewVideos}`);
-  }
+  console.log(`\n🎉 Ingestion finished! Added ${totalNew} brand new videos directly from YouTube channels.`);
+  const count = query('SELECT COUNT(*) as c FROM videos')[0].c;
+  console.log(`📊 Total genuine videos in database: ${count}`);
 
-  return { synced: totalNewVideos, success: true };
+  fs.writeFileSync(dbPath, Buffer.from(db.export()));
+  console.log('💾 Database successfully saved to disk.');
 }
 
-export function startPeriodicSync(db, saveDb) {
-  setTimeout(() => {
-    syncComedianVideos(db, saveDb).catch((err) => {
-      console.warn('[YouTubeSync] Initial sync note:', err.message);
-    });
-  }, 15000);
-
-  const SIX_HOURS = 6 * 60 * 60 * 1000;
-  setInterval(() => {
-    syncComedianVideos(db, saveDb).catch((err) => {
-      console.warn('[YouTubeSync] Recurring sync note:', err.message);
-    });
-  }, SIX_HOURS);
-
-  console.log('[YouTubeSync] 🕒 Automated background channel sync scheduled (every 6 hours).');
-}
+run().catch(err => {
+  console.error('Fatal sync error:', err);
+});
