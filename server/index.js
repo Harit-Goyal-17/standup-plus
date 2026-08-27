@@ -89,11 +89,11 @@ const AUTHOR_EMAIL = 'haritgoyal2007@gmail.com';
 async function sendOTPEmail(toEmail, otp, purpose = 'Verification') {
   if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
     console.log(`[OTP Notice] OTP for ${toEmail} (${purpose}): ${otp}`);
-    return;
+    return { sent: false, mock: true };
   }
   try {
     const isReset = purpose.toLowerCase().includes('password') || purpose === 'forgot_password';
-    await transporter.sendMail({
+    const sendPromise = transporter.sendMail({
       from: `"StandUp+ Security" <${process.env.EMAIL_USER}>`,
       to: toEmail,
       subject: isReset ? `🔐 ${otp} is your StandUp+ Password Reset OTP` : `✨ ${otp} is your StandUp+ Email Verification Code`,
@@ -117,9 +117,17 @@ async function sendOTPEmail(toEmail, otp, purpose = 'Verification') {
         </div>
       `
     });
+
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('SMTP timeout')), 3500)
+    );
+
+    await Promise.race([sendPromise, timeoutPromise]);
     console.log(`[Email Sent] OTP email dispatched to ${toEmail}`);
+    return { sent: true };
   } catch (err) {
-    console.error('Error sending OTP email:', err);
+    console.warn(`[OTP Notice] Email dispatch note (${err.message}). OTP for ${toEmail}: ${otp}`);
+    return { sent: false, error: err.message };
   }
 }
 
@@ -129,53 +137,61 @@ async function sendSupportNotificationEmail(ticketId, name, email, topic, messag
     return;
   }
   try {
-    // 1. Notify author (haritgoyal2007@gmail.com)
-    await transporter.sendMail({
-      from: `"StandUp+ Support Hub" <${process.env.EMAIL_USER}>`,
-      to: AUTHOR_EMAIL,
-      subject: `🎤 [StandUp+ Support #${ticketId}] ${topic} from ${name}`,
-      html: `
-        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #0a0a0f; color: #ffffff; padding: 30px 20px;">
-          <div style="max-width: 600px; margin: 0 auto; background: #14141c; border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 24px;">
-            <h2 style="color: #e50914; margin-top: 0; font-size: 20px;">New StandUp+ User Feedback / Inquiry</h2>
-            <div style="background: rgba(255,255,255,0.04); border-radius: 8px; padding: 16px; margin: 16px 0; font-size: 14px; line-height: 1.6;">
-              <p style="margin: 4px 0;"><strong>Ticket ID:</strong> #${ticketId}</p>
-              <p style="margin: 4px 0;"><strong>From:</strong> ${name} (<a href="mailto:${email}" style="color: #e50914;">${email}</a>)</p>
-              <p style="margin: 4px 0;"><strong>Topic:</strong> ${topic}</p>
-              <p style="margin: 4px 0;"><strong>User ID:</strong> ${userId || 'Guest'}</p>
-              <p style="margin: 4px 0;"><strong>Received At:</strong> ${new Date().toLocaleString('en-IN')}</p>
-            </div>
-            <div style="background: rgba(255,255,255,0.06); border-left: 4px solid #e50914; padding: 16px; border-radius: 4px; font-size: 15px; line-height: 1.6; color: #f3f4f6;">
-              ${message.replace(/\n/g, '<br/>')}
+    const sendPromise = (async () => {
+      // 1. Notify author (haritgoyal2007@gmail.com)
+      await transporter.sendMail({
+        from: `"StandUp+ Support Hub" <${process.env.EMAIL_USER}>`,
+        to: AUTHOR_EMAIL,
+        subject: `🎤 [StandUp+ Support #${ticketId}] ${topic} from ${name}`,
+        html: `
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #0a0a0f; color: #ffffff; padding: 30px 20px;">
+            <div style="max-width: 600px; margin: 0 auto; background: #14141c; border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 24px;">
+              <h2 style="color: #e50914; margin-top: 0; font-size: 20px;">New StandUp+ User Feedback / Inquiry</h2>
+              <div style="background: rgba(255,255,255,0.04); border-radius: 8px; padding: 16px; margin: 16px 0; font-size: 14px; line-height: 1.6;">
+                <p style="margin: 4px 0;"><strong>Ticket ID:</strong> #${ticketId}</p>
+                <p style="margin: 4px 0;"><strong>From:</strong> ${name} (<a href="mailto:${email}" style="color: #e50914;">${email}</a>)</p>
+                <p style="margin: 4px 0;"><strong>Topic:</strong> ${topic}</p>
+                <p style="margin: 4px 0;"><strong>User ID:</strong> ${userId || 'Guest'}</p>
+                <p style="margin: 4px 0;"><strong>Received At:</strong> ${new Date().toLocaleString('en-IN')}</p>
+              </div>
+              <div style="background: rgba(255,255,255,0.06); border-left: 4px solid #e50914; padding: 16px; border-radius: 4px; font-size: 15px; line-height: 1.6; color: #f3f4f6;">
+                ${message.replace(/\n/g, '<br/>')}
+              </div>
             </div>
           </div>
-        </div>
-      `
-    });
+        `
+      });
 
-    // 2. Send confirmation to user
-    await transporter.sendMail({
-      from: `"StandUp+ Support" <${process.env.EMAIL_USER}>`,
-      to: email,
-      subject: `[Ticket #${ticketId}] We have received your message - StandUp+`,
-      html: `
-        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #0a0a0f; color: #ffffff; padding: 30px 20px; text-align: center;">
-          <div style="max-width: 500px; margin: 0 auto; background: #14141c; border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 28px 24px;">
-            <div style="font-size: 24px; font-weight: 800; color: #e50914; margin-bottom: 8px;">StandUp+</div>
-            <h2 style="color: #ffffff; font-size: 18px; margin-bottom: 12px;">Support Ticket #${ticketId} Logged</h2>
-            <p style="color: #9ca3af; font-size: 14px; line-height: 1.6; margin-bottom: 20px;">
-              Hi ${name}, thank you for reaching out to StandUp+ regarding <strong>${topic}</strong>. Our team has received your message and will follow up shortly.
-            </p>
-            <p style="color: #6b7280; font-size: 12px;">
-              Ticket Reference: #${ticketId} | StandUp+ Support Team
-            </p>
+      // 2. Send confirmation to user
+      await transporter.sendMail({
+        from: `"StandUp+ Support" <${process.env.EMAIL_USER}>`,
+        to: email,
+        subject: `[Ticket #${ticketId}] We have received your message - StandUp+`,
+        html: `
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #0a0a0f; color: #ffffff; padding: 30px 20px; text-align: center;">
+            <div style="max-width: 500px; margin: 0 auto; background: #14141c; border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 28px 24px;">
+              <div style="font-size: 24px; font-weight: 800; color: #e50914; margin-bottom: 8px;">StandUp+</div>
+              <h2 style="color: #ffffff; font-size: 18px; margin-bottom: 12px;">Support Ticket #${ticketId} Logged</h2>
+              <p style="color: #9ca3af; font-size: 14px; line-height: 1.6; margin-bottom: 20px;">
+                Hi ${name}, thank you for reaching out to StandUp+ regarding <strong>${topic}</strong>. Our team has received your message and will follow up shortly.
+              </p>
+              <p style="color: #6b7280; font-size: 12px;">
+                Ticket Reference: #${ticketId} | StandUp+ Support Team
+              </p>
+            </div>
           </div>
-        </div>
-      `
-    });
+        `
+      });
+    })();
+
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('SMTP timeout')), 3500)
+    );
+
+    await Promise.race([sendPromise, timeoutPromise]);
     console.log(`[Support Email] Notification sent to author and confirmation sent to ${email}`);
   } catch (err) {
-    console.error('Error sending support notification email:', err);
+    console.warn('[Support Email Notice] Dispatch note:', err.message);
   }
 }
 
@@ -737,9 +753,14 @@ app.post('/api/auth/send-otp', asyncHandler(async (req, res) => {
   `, [cleanEmail, otp, type || 'verification', expiresAt]);
   saveDb();
 
-  await sendOTPEmail(cleanEmail, otp, type || 'Verification');
+  sendOTPEmail(cleanEmail, otp, type || 'Verification').catch(e => console.warn('OTP send error:', e));
 
-  res.json({ success: true, message: `OTP code sent to ${cleanEmail}` });
+  const isDevOrNoAuth = !process.env.EMAIL_USER || !process.env.EMAIL_PASS;
+  res.json({ 
+    success: true, 
+    message: `6-digit OTP code sent to ${cleanEmail}`,
+    debugOtp: isDevOrNoAuth ? otp : undefined 
+  });
 }));
 
 // Verify OTP

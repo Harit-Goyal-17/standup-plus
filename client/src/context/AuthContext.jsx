@@ -128,7 +128,7 @@ export const AuthProvider = ({ children }) => {
       });
       const data = await res.json();
       if (res.ok) {
-        return { success: true, message: data.message };
+        return { success: true, message: data.message, debugOtp: data.debugOtp };
       }
       return { success: false, error: data.error || 'Failed to send OTP' };
     } catch(e) {

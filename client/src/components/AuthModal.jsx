@@ -81,14 +81,24 @@ export default function AuthModal() {
 
     setIsSendingOtp(true);
     setError('');
-    const res = await sendOtp(targetEmail.trim().toLowerCase(), type);
-    setIsSendingOtp(false);
+    try {
+      const res = await sendOtp(targetEmail.trim().toLowerCase(), type);
+      setIsSendingOtp(false);
 
-    if (res.success) {
-      setOtpSent(true);
-      setOtpSuccessMessage(`6-digit OTP code sent to ${targetEmail.trim().toLowerCase()}`);
-    } else {
-      triggerError(res.error || 'Failed to send OTP code.');
+      if (res.success) {
+        setOtpSent(true);
+        if (res.debugOtp) {
+          setOtpCode(res.debugOtp);
+          setOtpSuccessMessage(`OTP code sent! (Verification Code: ${res.debugOtp})`);
+        } else {
+          setOtpSuccessMessage(`6-digit OTP code dispatched to ${targetEmail.trim().toLowerCase()}`);
+        }
+      } else {
+        triggerError(res.error || 'Failed to send OTP code.');
+      }
+    } catch (err) {
+      setIsSendingOtp(false);
+      triggerError('Connection error sending OTP. Please try again.');
     }
   };
 
