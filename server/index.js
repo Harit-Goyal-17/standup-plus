@@ -663,9 +663,9 @@ app.get('/api/categories', asyncHandler(async (req, res) => {
     SELECT DISTINCT v.*, c.name as comedian_name 
     FROM videos v 
     JOIN comedians c ON v.comedian_id = c.comedian_id
-    WHERE v.duration_seconds >= 1800
+    WHERE v.duration_seconds >= 480
     ORDER BY v.view_count DESC
-    LIMIT 10
+    LIMIT 12
   `);
   if (trendingVideos.length > 0) categories.push({ title: 'Trending Now', videos: trendingVideos });
 
@@ -674,24 +674,45 @@ app.get('/api/categories', asyncHandler(async (req, res) => {
     SELECT DISTINCT v.*, c.name as comedian_name 
     FROM videos v 
     JOIN comedians c ON v.comedian_id = c.comedian_id
-    JOIN video_tags vt ON v.video_id = vt.video_id
-    JOIN tags t ON vt.tag_id = t.tag_id
-    WHERE t.tag_name = 'crowd-work-heavy' AND t.tag_type = 'style' AND v.duration_seconds >= 1800
+    WHERE v.duration_seconds >= 360 AND (
+      v.video_id IN (
+        SELECT vt.video_id FROM video_tags vt JOIN tags t ON vt.tag_id = t.tag_id
+        WHERE t.tag_name = 'crowd-work-heavy'
+      )
+      OR LOWER(v.title) LIKE '%crowd work%'
+      OR LOWER(v.title) LIKE '%crowdwork%'
+    )
     ORDER BY RANDOM()
-    LIMIT 10
+    LIMIT 12
   `);
   if (crowdVideos.length > 0) categories.push({ title: 'Crowd Work', videos: crowdVideos });
 
-  // 5. Dark Comedy (Standard Cards)
+  // 5. Dark Comedy (Standard Cards - expanded to include dark, roast, cynical, sarcastic sets)
   const darkVideos = getCategoryVideos(`
     SELECT DISTINCT v.*, c.name as comedian_name 
     FROM videos v 
     JOIN comedians c ON v.comedian_id = c.comedian_id
-    JOIN video_tags vt ON v.video_id = vt.video_id
-    JOIN tags t ON vt.tag_id = t.tag_id
-    WHERE t.tag_name IN ('dark-and-cynical', 'sarcastic-and-biting') AND t.tag_type = 'tone' AND v.duration_seconds >= 1800
+    WHERE v.duration_seconds >= 360 AND (
+      v.video_id IN (
+        SELECT vt.video_id FROM video_tags vt JOIN tags t ON vt.tag_id = t.tag_id
+        WHERE t.tag_name IN ('dark-and-cynical', 'sarcastic-and-biting', 'deadpan-delivery')
+      )
+      OR LOWER(v.title) LIKE '%roast%'
+      OR LOWER(v.title) LIKE '%dark%'
+      OR LOWER(v.title) LIKE '%crime%'
+      OR LOWER(v.title) LIKE '%jail%'
+      OR LOWER(v.title) LIKE '%death%'
+      OR LOWER(v.title) LIKE '%police%'
+      OR LOWER(v.title) LIKE '%murder%'
+      OR LOWER(v.title) LIKE '%hospital%'
+      OR LOWER(v.title) LIKE '%unfiltered%'
+      OR LOWER(v.title) LIKE '%cynical%'
+      OR LOWER(v.title) LIKE '%offensive%'
+      OR v.suggested_rating = '18+'
+      OR c.name IN ('Samay Raina', 'Madhur Virli', 'Munawar Faruqui', 'Karunesh Talwar', 'Daniel Fernandes')
+    )
     ORDER BY RANDOM()
-    LIMIT 10
+    LIMIT 12
   `);
   if (darkVideos.length > 0) categories.push({ title: 'Dark Comedy', videos: darkVideos });
 
@@ -701,29 +722,43 @@ app.get('/api/categories', asyncHandler(async (req, res) => {
     FROM videos v
     JOIN comedians c ON v.comedian_id = c.comedian_id
     WHERE (v.content_type IN ('standup_set', 'standup_bit') OR v.content_type IS NULL)
-      AND v.duration_seconds BETWEEN 180 AND 2400
+      AND v.duration_seconds BETWEEN 360 AND 2400
     ORDER BY v.view_count DESC
     LIMIT 10
   `);
   if (topBits.length > 0) categories.push({ title: 'Top 10 Stand-Up Bits', videos: topBits, isTop10: true });
 
-  // 7. Family & Wholesome (Standard Cards)
+  // 7. Family & Wholesome (Standard Cards - expanded with relatable family, school, childhood, wedding bits)
   const familyVideos = getCategoryVideos(`
     SELECT DISTINCT v.*, c.name as comedian_name 
     FROM videos v 
     JOIN comedians c ON v.comedian_id = c.comedian_id
-    JOIN video_tags vt ON v.video_id = vt.video_id
-    JOIN tags t ON vt.tag_id = t.tag_id
-    WHERE (
-      (t.tag_name IN ('wholesome-and-lighthearted', 'nostalgic-and-warm') AND t.tag_type = 'tone')
-      OR 
-      (t.tag_name = 'family-and-upbringing' AND t.tag_type = 'theme' AND v.video_id IN (
-        SELECT vt2.video_id FROM video_tags vt2 JOIN tags t2 ON vt2.tag_id = t2.tag_id 
-        WHERE t2.tag_name IN ('wholesome-and-lighthearted', 'nostalgic-and-warm', 'self-deprecating-humor') AND t2.tag_type = 'tone'
-      ))
-    ) AND v.duration_seconds >= 1800
+    WHERE v.duration_seconds >= 360 AND (
+      v.video_id IN (
+        SELECT vt.video_id FROM video_tags vt JOIN tags t ON vt.tag_id = t.tag_id
+        WHERE t.tag_name IN ('wholesome-and-lighthearted', 'nostalgic-and-warm', 'family-and-upbringing')
+      )
+      OR LOWER(v.title) LIKE '%family%'
+      OR LOWER(v.title) LIKE '%mummy%'
+      OR LOWER(v.title) LIKE '%papa%'
+      OR LOWER(v.title) LIKE '%parents%'
+      OR LOWER(v.title) LIKE '%bachpan%'
+      OR LOWER(v.title) LIKE '%school%'
+      OR LOWER(v.title) LIKE '%shaadi%'
+      OR LOWER(v.title) LIKE '%wedding%'
+      OR LOWER(v.title) LIKE '%rishte%'
+      OR LOWER(v.title) LIKE '%dad%'
+      OR LOWER(v.title) LIKE '%mom%'
+      OR LOWER(v.title) LIKE '%childhood%'
+      OR LOWER(v.title) LIKE '%relative%'
+      OR LOWER(v.title) LIKE '%nostalgia%'
+      OR (v.suggested_rating = 'U/A' AND c.name IN ('Amit Tandon', 'Gaurav Kapoor', 'Zakir Khan', 'Abhishek Upmanyu', 'Rahul Subramanian', 'Vipul Goyal', 'Harsh Gujral', 'Kanan Gill'))
+    )
+    AND LOWER(v.title) NOT LIKE '%roast%'
+    AND LOWER(v.title) NOT LIKE '%murder%'
+    AND (v.suggested_rating != '18+' OR v.suggested_rating IS NULL)
     ORDER BY RANDOM()
-    LIMIT 10
+    LIMIT 12
   `);
   if (familyVideos.length > 0) categories.push({ title: 'Family & Wholesome', videos: familyVideos });
 
@@ -732,11 +767,18 @@ app.get('/api/categories', asyncHandler(async (req, res) => {
     SELECT DISTINCT v.*, c.name as comedian_name 
     FROM videos v 
     JOIN comedians c ON v.comedian_id = c.comedian_id
-    JOIN video_tags vt ON v.video_id = vt.video_id
-    JOIN tags t ON vt.tag_id = t.tag_id
-    WHERE t.tag_name = 'anecdotal-storytelling' AND t.tag_type = 'style' AND v.duration_seconds >= 1800
+    WHERE v.duration_seconds >= 480 AND (
+      v.video_id IN (
+        SELECT vt.video_id FROM video_tags vt JOIN tags t ON vt.tag_id = t.tag_id
+        WHERE t.tag_name = 'anecdotal-storytelling'
+      )
+      OR LOWER(v.title) LIKE '%story%'
+      OR LOWER(v.title) LIKE '%kissa%'
+      OR LOWER(v.title) LIKE '%safarnama%'
+      OR c.name IN ('Anubhav Singh Bassi', 'Zakir Khan', 'Prashasti Singh', 'Abhishek Upmanyu', 'Aakash Gupta')
+    )
     ORDER BY RANDOM()
-    LIMIT 10
+    LIMIT 12
   `);
   if (storytellerVideos.length > 0) categories.push({ title: 'Storytellers', videos: storytellerVideos });
 
@@ -745,8 +787,8 @@ app.get('/api/categories', asyncHandler(async (req, res) => {
     SELECT v.*, c.name as comedian_name
     FROM videos v
     JOIN comedians c ON v.comedian_id = c.comedian_id
-    WHERE v.content_type = 'roast'
-       OR LOWER(v.title) LIKE '%roast%'
+    WHERE (v.content_type = 'roast' OR LOWER(v.title) LIKE '%roast%')
+      AND v.duration_seconds >= 360
     ORDER BY v.view_count DESC
     LIMIT 10
   `);
@@ -757,11 +799,22 @@ app.get('/api/categories', asyncHandler(async (req, res) => {
     SELECT DISTINCT v.*, c.name as comedian_name 
     FROM videos v 
     JOIN comedians c ON v.comedian_id = c.comedian_id
-    JOIN video_tags vt ON v.video_id = vt.video_id
-    JOIN tags t ON vt.tag_id = t.tag_id
-    WHERE t.tag_name = 'romantic-relationships' AND t.tag_type = 'theme' AND v.duration_seconds >= 1800
+    WHERE v.duration_seconds >= 360 AND (
+      v.video_id IN (
+        SELECT vt.video_id FROM video_tags vt JOIN tags t ON vt.tag_id = t.tag_id
+        WHERE t.tag_name = 'romantic-relationships'
+      )
+      OR LOWER(v.title) LIKE '%dating%'
+      OR LOWER(v.title) LIKE '%breakup%'
+      OR LOWER(v.title) LIKE '%girlfriend%'
+      OR LOWER(v.title) LIKE '%boyfriend%'
+      OR LOWER(v.title) LIKE '%pyaar%'
+      OR LOWER(v.title) LIKE '%marriage%'
+      OR LOWER(v.title) LIKE '%husband%'
+      OR LOWER(v.title) LIKE '%wife%'
+    )
     ORDER BY RANDOM()
-    LIMIT 10
+    LIMIT 12
   `);
   if (relationshipVideos.length > 0) categories.push({ title: 'Relationships', videos: relationshipVideos });
 
@@ -770,38 +823,51 @@ app.get('/api/categories', asyncHandler(async (req, res) => {
     SELECT DISTINCT v.*, c.name as comedian_name 
     FROM videos v 
     JOIN comedians c ON v.comedian_id = c.comedian_id
-    JOIN video_tags vt ON v.video_id = vt.video_id
-    JOIN tags t ON vt.tag_id = t.tag_id
-    WHERE t.tag_name = 'corporate-and-work-life' AND t.tag_type = 'theme' AND v.duration_seconds >= 1800
+    WHERE v.duration_seconds >= 360 AND (
+      v.video_id IN (
+        SELECT vt.video_id FROM video_tags vt JOIN tags t ON vt.tag_id = t.tag_id
+        WHERE t.tag_name = 'corporate-and-work-life'
+      )
+      OR LOWER(v.title) LIKE '%corporate%'
+      OR LOWER(v.title) LIKE '%office%'
+      OR LOWER(v.title) LIKE '%job%'
+      OR LOWER(v.title) LIKE '%boss%'
+      OR LOWER(v.title) LIKE '%interview%'
+      OR LOWER(v.title) LIKE '%engineer%'
+      OR LOWER(v.title) LIKE '%work%'
+    )
     ORDER BY RANDOM()
-    LIMIT 10
+    LIMIT 12
   `);
   if (corporateVideos.length > 0) categories.push({ title: 'Workplace & Corporate', videos: corporateVideos });
 
-  // 12. Comedy Series (Top 10 Numbered)
+  // 12. Hit Comedy Shows (Top 10 Numbered - renamed from Comedy Series)
   const topEpisodes = getCategoryVideos(`
     SELECT DISTINCT v.*, c.name as comedian_name 
     FROM videos v 
     JOIN comedians c ON v.comedian_id = c.comedian_id
-    WHERE v.content_type = 'episode'
+    WHERE (v.content_type = 'episode' OR LOWER(v.title) LIKE '%ep.%' OR LOWER(v.title) LIKE '%episode%' OR LOWER(v.title) LIKE '%s2 ep%' OR LOWER(v.title) LIKE '%s1. ep%')
+      AND v.duration_seconds >= 480
     ORDER BY v.view_count DESC
     LIMIT 10
   `);
-  if (topEpisodes.length > 0) categories.push({ title: 'Comedy Series', videos: topEpisodes, isTop10: true });
+  if (topEpisodes.length > 0) categories.push({ title: 'Hit Comedy Shows', videos: topEpisodes, isTop10: true });
 
   // 13. Global Stand-Up (Global Touring Artists)
   const internationalVideos = getCategoryVideos(`
     SELECT DISTINCT v.*, c.name as comedian_name 
     FROM videos v 
     JOIN comedians c ON v.comedian_id = c.comedian_id
-    WHERE c.name LIKE '%Taylor Tomlinson%' 
-       OR c.name LIKE '%Trevor Noah%' 
-       OR c.name LIKE '%Hasan Minhaj%' 
-       OR c.name LIKE '%Russell Peters%' 
-       OR c.name LIKE '%Max Amini%'
-       OR c.name LIKE '%Trevor Wallace%'
-       OR c.name LIKE '%Gianmarco%'
-       OR c.name LIKE '%Pete Holmes%'
+    WHERE v.duration_seconds >= 360 AND (
+      c.name LIKE '%Taylor Tomlinson%' 
+      OR c.name LIKE '%Trevor Noah%' 
+      OR c.name LIKE '%Hasan Minhaj%' 
+      OR c.name LIKE '%Russell Peters%' 
+      OR c.name LIKE '%Max Amini%'
+      OR c.name LIKE '%Trevor Wallace%'
+      OR c.name LIKE '%Gianmarco%'
+      OR c.name LIKE '%Pete Holmes%'
+    )
     ORDER BY v.view_count DESC
     LIMIT 10
   `);
