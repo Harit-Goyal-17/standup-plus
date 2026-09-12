@@ -181,11 +181,11 @@ export default function ComedianPage() {
             }}
           />
           <div className="comedian-hero-meta">
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, marginBottom: 6 }}>
               <span className="comedian-verified-tag">Verified Stand-Up Artist</span>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0, display: 'block' }}>
                 <circle cx="12" cy="12" r="10" fill="#1d9bf0"/>
-                <path d="M8.5 12.5L10.5 14.5L15.5 9.5" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M8.5 12.5L10.5 14.5L15.5 9.5" stroke="white" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </div>
             <h1 className="comedian-hero-name">{cleanHandle(comedian.name)}</h1>

@@ -255,7 +255,9 @@ export const COMEDIAN_AVATARS = [
   { id: 'gurleen', name: 'Gurleen Pannu', category: 'comedians', url: '/images/comedians/gurleen_pannu.jpg' },
   { id: 'shashi', name: 'Shashi Dhiman', category: 'comedians', url: '/images/comedians/shashi_dhiman.jpg' },
   { id: 'amit', name: 'Amit Tandon', category: 'comedians', url: '/images/comedians/amit_tandon.jpg' },
-  { id: 'jaspreet', name: 'Jaspreet Singh', category: 'comedians', url: '/images/comedians/jaspreet_singh.jpg' }
+  { id: 'jaspreet', name: 'Jaspreet Singh', category: 'comedians', url: '/images/comedians/jaspreet_singh.jpg' },
+  { id: 'vaibhav', name: 'Vaibhav Karn', category: 'comedians', url: '/images/comedians/vaibhav_karn.jpg' },
+  { id: 'trisha', name: 'Trisha Pathak', category: 'comedians', url: '/images/comedians/trisha_pathak.jpg' }
 ];
 
 // 2. Shows & Series Avatars

@@ -5349,7 +5349,10 @@ input:checked + .toggle-slider:before {
   font-weight: 600;
   letter-spacing: 0.5px;
   text-transform: uppercase;
-  margin-bottom: 8px;
+  margin: 0;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
 }
 
 .comedian-card-stats {
@@ -5444,8 +5447,10 @@ input:checked + .toggle-slider:before {
   color: #e50914;
   letter-spacing: 1px;
   text-transform: uppercase;
-  display: inline-block;
-  margin-bottom: 4px;
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+  line-height: 1;
 }
 
 .comedian-hero-name {

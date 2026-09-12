@@ -48,16 +48,16 @@ export default function BrowseComediansPage() {
       const roastComics = ['Samay Raina', 'Aashish Solanki', 'Harsh Gujral', 'Madhur Virli', 'Munawar Faruqui', 'Tanmay Bhat', 'Sundeep Sharma'];
       list = list.filter(c => roastComics.some(name => c.name.toLowerCase().includes(name.toLowerCase())));
     } else if (selectedCategory === 'observational') {
-      const obsComics = ['Anubhav Singh Bassi', 'Zakir Khan', 'Abhishek Upmanyu', 'Aakash Gupta', 'Rahul Dua', 'Gaurav Kapoor', 'Kanan Gill', 'Biswa Kalyan Rath'];
+      const obsComics = ['Anubhav Singh Bassi', 'Zakir Khan', 'Abhishek Upmanyu', 'Aakash Gupta', 'Rahul Dua', 'Gaurav Kapoor', 'Kanan Gill', 'Biswa Kalyan Rath', 'Vaibhav Karn'];
       list = list.filter(c => obsComics.some(name => c.name.toLowerCase().includes(name.toLowerCase())));
     } else if (selectedCategory === 'storytelling') {
-      const storyComics = ['Zakir Khan', 'Anubhav Singh Bassi', 'Gaurav Kapoor', 'Prashasti Singh', 'Manish Chaubey', 'Ashish Shakya', 'Ravi Gupta'];
+      const storyComics = ['Zakir Khan', 'Anubhav Singh Bassi', 'Gaurav Kapoor', 'Prashasti Singh', 'Manish Chaubey', 'Ashish Shakya', 'Ravi Gupta', 'Vaibhav Karn'];
       list = list.filter(c => storyComics.some(name => c.name.toLowerCase().includes(name.toLowerCase())));
     } else if (selectedCategory === 'clean') {
-      const cleanComics = ['Aashish Solanki', 'Aakash Gupta', 'Amit Tandon', 'Jaspreet Singh', 'Rahul Dua', 'Appurv Gupta', 'Gaurav Gupta'];
+      const cleanComics = ['Aashish Solanki', 'Aakash Gupta', 'Amit Tandon', 'Jaspreet Singh', 'Rahul Dua', 'Appurv Gupta', 'Gaurav Gupta', 'Trisha Pathak', 'Vaibhav Karn'];
       list = list.filter(c => cleanComics.some(name => c.name.toLowerCase().includes(name.toLowerCase())));
     } else if (selectedCategory === 'female') {
-      const femaleComics = ['Prashasti Singh', 'Swati Sachdeva', 'Gurleen Pannu', 'Urooj Ashfaq', 'Shreeja Chaturvedi', 'Sumukhi Suresh', 'Kaneez Surka', 'Aishwarya Mohanraj', 'Sejal Bhat', 'Pavitra Shetty', 'Taylor Tomlinson'];
+      const femaleComics = ['Prashasti Singh', 'Swati Sachdeva', 'Gurleen Pannu', 'Trisha Pathak', 'Urooj Ashfaq', 'Shreeja Chaturvedi', 'Sumukhi Suresh', 'Kaneez Surka', 'Aishwarya Mohanraj', 'Sejal Bhat', 'Pavitra Shetty', 'Taylor Tomlinson'];
       list = list.filter(c => femaleComics.some(name => c.name.toLowerCase().includes(name.toLowerCase())));
     } else if (selectedCategory === 'global') {
       const globalComics = ['Taylor Tomlinson', 'Trevor Noah', 'Hasan Minhaj', 'Russell Peters', 'Max Amini', 'Trevor Wallace', 'Gianmarco', 'Pete Holmes', 'Akaash Singh'];
@@ -165,11 +165,11 @@ export default function BrowseComediansPage() {
               <div className="comedian-card-details">
                 <h3 className="comedian-card-name">{cleanHandle(c.name)}</h3>
                 
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginBottom: 8 }}>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
                   <span className="comedian-card-badge">Verified Artist</span>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0, display: 'block' }}>
                     <circle cx="12" cy="12" r="10" fill="#1d9bf0"/>
-                    <path d="M8.5 12.5L10.5 14.5L15.5 9.5" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M8.5 12.5L10.5 14.5L15.5 9.5" stroke="white" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </div>
                 

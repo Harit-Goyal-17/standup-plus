@@ -1627,6 +1627,18 @@ async function start() {
         )
       `);
     } catch(e) {}
+
+    // Ensure zero shorts (< 240s) exist in the catalog
+    try {
+      db.run(`
+        DELETE FROM video_tags WHERE video_id IN (SELECT video_id FROM videos WHERE duration_seconds < 240 OR duration_seconds IS NULL);
+        DELETE FROM watch_history WHERE video_id IN (SELECT video_id FROM videos WHERE duration_seconds < 240 OR duration_seconds IS NULL);
+        DELETE FROM favorites WHERE video_id IN (SELECT video_id FROM videos WHERE duration_seconds < 240 OR duration_seconds IS NULL);
+        DELETE FROM user_ratings WHERE video_id IN (SELECT video_id FROM videos WHERE duration_seconds < 240 OR duration_seconds IS NULL);
+        DELETE FROM videos WHERE duration_seconds < 240 OR duration_seconds IS NULL;
+      `);
+    } catch(e) {}
+
     saveDb();
 
     recommender = new Recommender(db);

@@ -34,16 +34,21 @@ const COMEDIAN_HANDLES = [
   { handle: 'pannugurleen', comedianId: 528, name: 'Gurleen Pannu' },
   { handle: 'ChiragPanjwani', comedianId: 3, name: 'Chirag Panjwani' },
   { handle: 'raviguptacomedy', comedianId: 105, name: 'Ravi Gupta' },
-  { handle: 'TandonAmit', comedianId: 1, name: 'Amit Tandon' }
+  { handle: 'TandonAmit', comedianId: 1, name: 'Amit Tandon' },
+  { handle: 'vaibhavkarn', comedianId: 530, name: 'Vaibhav Karn' },
+  { handle: 'trishapathakcomedy', comedianId: 531, name: 'Trisha Pathak' }
 ];
+
+const MIN_DURATION = 240; // 4 minutes minimum - strictly exclude shorts/reels
 
 const NEGATIVE_KEYWORDS = [
   'gaming', 'propnight', 'chess', 'gta', 'minecraft', 'vlog', 'unboxing',
-  'reaction', 'podcast', 'simple ken', 'shorts', 'reels', '#shorts', 'promo',
-  'trailer', 'behind the scenes', 'interview only', 'song', 'music video'
+  'reaction', 'podcast', 'simple ken', 'shorts', 'reels', '#shorts', '#short', '#reels', 'promo',
+  'trailer', 'behind the scenes', 'interview only', 'song', 'music video', 'teaser'
 ];
 
-function isStandup(title, desc = '') {
+function isStandup(title, desc = '', duration = 1200) {
+  if (duration < MIN_DURATION) return false;
   const text = (title + ' ' + desc).toLowerCase();
   for (const n of NEGATIVE_KEYWORDS) {
     if (text.includes(n)) return false;
@@ -142,7 +147,11 @@ export async function syncComedianVideos(db, saveDb) {
         const views = parseInt(item.statistics?.viewCount || '100000');
         const likes = parseInt(item.statistics?.likeCount || '5000');
 
-        if (!isStandup(title, desc)) continue;
+        if (duration < MIN_DURATION || !isStandup(title, desc, duration)) {
+          // If a short video was previously ingested, clean it up
+          dbRun('DELETE FROM videos WHERE video_id = ? AND duration_seconds < ?', [vidId, MIN_DURATION]);
+          continue;
+        }
 
         const exists = dbGet('SELECT video_id FROM videos WHERE video_id = ?', [vidId]);
         const contentType = detectContentType(title);
