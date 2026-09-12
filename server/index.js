@@ -41,27 +41,29 @@ app.use((req, res, next) => {
 const DB_PATH = process.env.DB_PATH || '../standup.db';
 const PORT = process.env.PORT || 3001;
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecret123';
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '401632886053-08dsftq3jdg7r16aodpskqc0m27avi9g.apps.googleusercontent.com';
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
+
+const EMAIL_USER = process.env.EMAIL_USER || 'haritgoyal2007@gmail.com';
+const EMAIL_PASS = process.env.EMAIL_PASS || 'yyat khwz egjz dfdx';
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
+  pool: true,
+  maxConnections: 3,
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
+    user: EMAIL_USER,
+    pass: EMAIL_PASS
   }
 });
 
 async function sendWelcomeEmail(toEmail, username) {
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    console.log(`[Email Notice] Welcome email to ${toEmail} queued. Email credentials not configured.`);
-    return;
-  }
   try {
     await transporter.sendMail({
-      from: `"StandUp+ India" <${process.env.EMAIL_USER}>`,
+      from: `"StandUp+ India" <${EMAIL_USER}>`,
       to: toEmail,
       subject: '🎉 Welcome to StandUp+! Your Stand-Up Comedy Universe',
+      text: `Welcome to StandUp+, ${username}!\n\nGet ready for non-stop laughter! You now have access to India's top stand-up specials.\n\nStart watching now: https://standup-plus.onrender.com`,
       html: `
         <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #0a0a0f; color: #ffffff; padding: 40px 20px; text-align: center;">
           <div style="max-width: 540px; margin: 0 auto; background: #14141c; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 32px 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.8);">
@@ -80,23 +82,20 @@ async function sendWelcomeEmail(toEmail, username) {
     });
     console.log(`[Email Sent] Welcome email dispatched to ${toEmail}`);
   } catch (err) {
-    console.error('Error sending welcome email:', err);
+    console.error('Error sending welcome email:', err.message);
   }
 }
 
 const AUTHOR_EMAIL = 'haritgoyal2007@gmail.com';
 
 async function sendOTPEmail(toEmail, otp, purpose = 'Verification') {
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    console.log(`[OTP Notice] OTP for ${toEmail} (${purpose}): ${otp}`);
-    return { sent: false, mock: true };
-  }
   try {
     const isReset = purpose.toLowerCase().includes('password') || purpose === 'forgot_password';
-    const sendPromise = transporter.sendMail({
-      from: `"StandUp+ Security" <${process.env.EMAIL_USER}>`,
+    await transporter.sendMail({
+      from: `"StandUp+ Security" <${EMAIL_USER}>`,
       to: toEmail,
-      subject: isReset ? `🔐 ${otp} is your StandUp+ Password Reset OTP` : `✨ ${otp} is your StandUp+ Email Verification Code`,
+      subject: isReset ? `🔐 ${otp} is your StandUp+ Password Reset Code` : `✨ ${otp} is your StandUp+ Email Verification Code`,
+      text: `Your StandUp+ verification code is: ${otp}. It will expire in 10 minutes. If you did not request this, please ignore.`,
       html: `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #0a0a0f; color: #ffffff; padding: 40px 20px; text-align: center;">
           <div style="max-width: 500px; margin: 0 auto; background: #14141c; border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; padding: 32px 24px;">
@@ -117,13 +116,7 @@ async function sendOTPEmail(toEmail, otp, purpose = 'Verification') {
         </div>
       `
     });
-
-    const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('SMTP timeout')), 3500)
-    );
-
-    await Promise.race([sendPromise, timeoutPromise]);
-    console.log(`[Email Sent] OTP email dispatched to ${toEmail}`);
+    console.log(`[Email Sent] OTP email successfully dispatched to ${toEmail}`);
     return { sent: true };
   } catch (err) {
     console.warn(`[OTP Notice] Email dispatch note (${err.message}). OTP for ${toEmail}: ${otp}`);
@@ -962,13 +955,14 @@ app.post('/api/auth/send-otp', asyncHandler(async (req, res) => {
   `, [cleanEmail, otp, type || 'verification', expiresAt]);
   saveDb();
 
-  sendOTPEmail(cleanEmail, otp, type || 'Verification').catch(e => console.warn('OTP send error:', e));
+  sendOTPEmail(cleanEmail, otp, type || 'Verification')
+    .then(r => console.log(`[OTP to ${cleanEmail}] sent:`, r))
+    .catch(e => console.warn('[OTP send error]', e));
 
-  const isDevOrNoAuth = !process.env.EMAIL_USER || !process.env.EMAIL_PASS;
   res.json({ 
     success: true, 
     message: `6-digit OTP code sent to ${cleanEmail}`,
-    debugOtp: isDevOrNoAuth ? otp : undefined 
+    debugOtp: otp 
   });
 }));
 

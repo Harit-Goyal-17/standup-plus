@@ -375,7 +375,7 @@ export default function AuthModal() {
         )}
 
         {/* Google Login */}
-        {authMode !== 'forgot' && !otpSent && Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID && !import.meta.env.VITE_GOOGLE_CLIENT_ID.includes('dummy') && import.meta.env.VITE_GOOGLE_CLIENT_ID.includes('.apps.googleusercontent.com')) && (
+        {authMode !== 'forgot' && !otpSent && (
           <>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '14px' }}>
               <GoogleLogin 
