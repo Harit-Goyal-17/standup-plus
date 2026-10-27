@@ -40,24 +40,40 @@ app.use((req, res, next) => {
 
 const DB_PATH = process.env.DB_PATH || '../standup.db';
 const PORT = process.env.PORT || 3001;
-const JWT_SECRET = process.env.JWT_SECRET || 'supersecret123';
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '401632886053-08dsftq3jdg7r16aodpskqc0m27avi9g.apps.googleusercontent.com';
+const JWT_SECRET = process.env.JWT_SECRET;
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is required.');
+}
+
+if (!GOOGLE_CLIENT_ID) {
+  throw new Error('GOOGLE_CLIENT_ID environment variable is required.');
+}
+
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 
-const EMAIL_USER = process.env.EMAIL_USER || 'haritgoyal2007@gmail.com';
-const EMAIL_PASS = process.env.EMAIL_PASS || 'yyat khwz egjz dfdx';
+const EMAIL_USER = process.env.EMAIL_USER;
+const EMAIL_PASS = process.env.EMAIL_PASS;
 
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  pool: true,
-  maxConnections: 3,
-  auth: {
-    user: EMAIL_USER,
-    pass: EMAIL_PASS
-  }
-});
+const transporter = EMAIL_USER && EMAIL_PASS
+  ? nodemailer.createTransport({
+      service: 'gmail',
+      pool: true,
+      maxConnections: 3,
+      auth: {
+        user: EMAIL_USER,
+        pass: EMAIL_PASS
+      }
+    })
+  : null;
 
 async function sendWelcomeEmail(toEmail, username) {
+  if (!transporter) {
+    console.warn('Welcome email not sent: email is not configured.');
+    return { sent: false, error: 'Email not configured' };
+  }
+
   try {
     await transporter.sendMail({
       from: `"StandUp+ India" <${EMAIL_USER}>`,
@@ -89,6 +105,11 @@ async function sendWelcomeEmail(toEmail, username) {
 const AUTHOR_EMAIL = 'haritgoyal2007@gmail.com';
 
 async function sendOTPEmail(toEmail, otp, purpose = 'Verification') {
+  if (!transporter) {
+    console.warn('OTP email not sent: email is not configured.');
+    return { sent: false, error: 'Email not configured' };
+  }
+
   try {
     const isReset = purpose.toLowerCase().includes('password') || purpose === 'forgot_password';
     await transporter.sendMail({
